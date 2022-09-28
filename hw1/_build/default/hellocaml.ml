@@ -324,11 +324,11 @@ let quadrupled_z_again : int = twice double z  (* pass double to twice *)
   makes the first case of part1_tests "Problem 1" succeed. See the
   gradedtests.ml file.
 *)
-let pieces : int = 8
+let pieces : int = -1
 
 (* Implement a function cube that takes an int value and produces its cube. *)
 let cube : int -> int =
-	fun x -> x*x*x
+	fun _ -> failwith "cube unimplemented"
 
 
 (* Problem 1-2 *)
@@ -340,7 +340,7 @@ let cube : int -> int =
   and computes the total value in centimes:
 *)
 let centimes_of : int -> int -> int =
-  fun rp fr -> rp + 100*fr 
+  fun _ -> failwith "centimes_of unimplemented"
 
 
 (* Problem 1-3 *)
@@ -496,10 +496,8 @@ let pair_up (x:'a) : ('a * 'a) = (x, x)
   Complete the definition of third_of_three; be sure to give it
   the correct type signature:
 *)
-let third_of_three (t:'a * 'b * 'c) : 'c  = 
-  begin match t with
-| (_, _, x) -> x
-end
+let third_of_three _ = failwith
+  "third_of_three unimplemented"
 
 
 (*
@@ -512,9 +510,7 @@ end
 *)
 
 let compose_pair (p:(('b -> 'c) * ('a -> 'b))) : 'a -> 'c =
-  let f = fst p in 
-    let g = snd p in 
-      fun (x) -> f (g x) 
+  failwith "compose_pair unimplemented"
 
 
 
@@ -688,10 +684,8 @@ let rec mylist_to_list (l:'a mylist) : 'a list =
   the inverse of the mylist_to_list function given above.
 *)
 let rec list_to_mylist (l:'a list) : 'a mylist =
-  begin match l with 
-  | [] -> Nil
-  | h :: tl -> Cons(h, list_to_mylist tl)
-end
+  failwith "list_to_mylist unimplemented"
+
 
 (*
   Problem 3-2
@@ -707,13 +701,7 @@ end
   append.  So (List.append [1;2] [3]) is the same as  ([1;2] @ [3]).
 *)
 let rec append (l1:'a list) (l2:'a list) : 'a list =
-  begin match l1, l2 with 
-  | [], [] -> []
-  | [], l2 -> l2
-  | l1, [] -> l1 
-  | (h1 :: tl1), (h2 :: tl2) when (h1 > h2) -> h2 :: append (h1 :: tl1) tl2 
-  | (h1 :: tl1), (h2 :: tl2) -> h1 :: append tl1 (h2 :: tl2)
-end
+  failwith "append unimplemented"
 
 (*
   Problem 3-3
@@ -722,9 +710,8 @@ end
   you might want to call append.  Do not use the library function.
 *)
 let rec rev (l:'a list) : 'a list =
-  begin match l with 
-  | _ -> []
-end 
+  failwith "rev unimplemented"
+
 (*
   Problem 3-4
 

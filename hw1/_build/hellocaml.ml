@@ -755,8 +755,13 @@ let rev_t (l: 'a list) : 'a list =
   value computed by e1 or the value computed by e2 depending on whether t
   evaluates to true or false.
 *)
-let rec insert (x:'a) (l:'a list) : 'a list =
-  failwith "insert unimplemented"
+let rec insert (x:'a) (l:'a list) : 'a list = 
+  begin match l with 
+  | [] -> x::[]
+  | (h::tl) -> if (x < h) then x::(h::tl)
+               else if (x > h) then h::(insert x tl) 
+               else h::tl 
+  end
 
 
 (*
@@ -767,7 +772,10 @@ let rec insert (x:'a) (l:'a list) : 'a list =
   Hint: you might want to use the insert function that you just defined.
 *)
 let rec union (l1:'a list) (l2:'a list) : 'a list =
-  failwith "union unimplemented"
+  begin match l1 with 
+  | [] -> l2
+  | (h1::tl1) -> union tl1 (insert h1 l2)
+end 
 
 
 
@@ -829,7 +837,7 @@ type exp =
   An object-language arithmetic expression whose concrete (ASCII) syntax is
   "2 * 3" could be represented like this:
 *)
-let e1 : exp = Mult(Const 2L, Const 3L)   (* "2 * 3" *)
+let e1 : exp = Mult(Const 2L, Const 3L)   (* "2 * 3" *) 
 
 (*
   If the object-level expression contains variables, we represent them as
@@ -858,7 +866,13 @@ let e3 : exp = Mult(Var "y", Mult(e2, Neg e2))     (* "y * ((x+1) * -(x+1))" *)
   Hint: you probably want to use the 'union' function you wrote for Problem 3-5.
 *)
 let rec vars_of (e:exp) : string list =
-  failwith "vars_of unimplemented"
+  begin match e with 
+  | Var x -> x::[]
+  | Const x -> []
+  | Add (exp1, exp2) -> union (vars_of exp1) (vars_of exp2) 
+  | Mult (exp1, exp2) -> union (vars_of exp1) (vars_of exp2)
+  | Neg exp -> vars_of(exp)
+end 
 
 
 (*
@@ -877,8 +891,13 @@ let rec vars_of (e:exp) : string list =
 *)
 
 let rec string_of (e:exp) : string =
-  failwith "string_of unimplemented"
-
+  begin match e with 
+  | Var x -> x
+  | Const x -> Int64.to_string(x) 
+  | Add (exp1, exp2) -> "(" ^ (string_of exp1) ^ " + " ^ (string_of exp2) ^ ")"
+  | Mult (exp1, exp2) -> "(" ^ (string_of exp1) ^ " * " ^ (string_of exp2) ^ ")"
+  | Neg exp -> "-" ^ "(" ^ (string_of exp) ^ ")"
+end
 (*
   How should we _interpret_ (i.e. give meaning to) an expression?
 
@@ -938,7 +957,12 @@ let ctxt2 : ctxt = [("x", 2L); ("y", 7L)]  (* maps "x" to 2L, "y" to 7L *)
   such value, it should raise the Not_found exception.
 *)
 let rec lookup (x:string) (c:ctxt) : int64 =
-  failwith "unimplemented"
+  begin match c with 
+  | [] -> raise Not_found
+  | (h::tl) -> 
+    if String.equal x (fst h) then snd h
+    else lookup x tl
+  end   
 
 
 (*
@@ -965,7 +989,13 @@ let rec lookup (x:string) (c:ctxt) : int64 =
 *)
 
 let rec interpret (c:ctxt) (e:exp) : int64 =
-  failwith "unimplemented"
+  begin match e with 
+  | Var x -> lookup x c
+  | Const x -> x
+  | Add (exp1, exp2) -> Int64.add (interpret c exp1)  (interpret c exp2)
+  | Mult (exp1, exp2) -> Int64.mul (interpret c exp1) (interpret c exp2)
+  | Neg exp -> Int64.neg (interpret c exp) 
+end 
 
 
 (*
@@ -1010,8 +1040,19 @@ let rec interpret (c:ctxt) (e:exp) : int64 =
   Hint: what simple optimizations can you do with Neg?
 *)
 
-let rec optimize (e:exp) : exp =
-  failwith "optimize unimplemented"
+let rec optimize (e:exp) : exp = e
+  (*begin match e with 
+  | Var x -> Var x
+  | Const x -> Const x
+  | Add (exp1, exp2) -> 
+    begin match (exp1, exp2) with 
+    | (_, Const 0L) -> exp1
+    | (Const 0L, _) -> exp2
+    | (_  , _ _) -> Add (exp1, exp2)
+    end 
+  | Mult (exp1, exp2) -> 
+    begin match exp1, exp2 with 
+    | *)
 
 
 (******************************************************************************)

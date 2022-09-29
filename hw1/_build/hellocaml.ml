@@ -707,13 +707,9 @@ end
   append.  So (List.append [1;2] [3]) is the same as  ([1;2] @ [3]).
 *)
 let rec append (l1:'a list) (l2:'a list) : 'a list =
-  begin match l1, l2 with 
-  | [], [] -> []
-  | [], l2 -> l2
-  | l1, [] -> l1
-  | (h1 :: tl1), (h2 :: tl2) when (h1 > h2) -> h2 :: append (h1 :: tl1) tl2 
-  | (h1 :: tl1), (h2 :: tl2) when (h1 <= h2) -> h1 :: append tl1 (h2 :: tl2)
-  | (h1 :: tl1), l2 -> h1 :: append tl1 l2
+  begin match l1 with
+  | [] -> l2
+  | (h1::l1) -> h1:: (append l1 l2)
 end
 
 (*
@@ -723,8 +719,10 @@ end
   you might want to call append.  Do not use the library function.
 *)
 let rec rev (l:'a list) : 'a list =
-  failwith "rev unimplemented"
-
+  begin match l with 
+  | [] -> []
+  | (h1::l1) -> append (rev l1) (h1::[])
+end 
 (*
   Problem 3-4
 
@@ -737,7 +735,8 @@ let rec rev (l:'a list) : 'a list =
 let rev_t (l: 'a list) : 'a list =
   let rec rev_aux l acc =
     begin match l with
-      | _ -> failwith "rev_t unimplemented"
+      | [] -> []
+      | (h1::l1) -> append (rev_aux l1 acc) (h1::[])
     end
   in
   rev_aux l []

@@ -1040,20 +1040,38 @@ end
   Hint: what simple optimizations can you do with Neg?
 *)
 
-let rec optimize (e:exp) : exp = e
-  (*begin match e with 
+let rec optimize (e:exp) : exp =
+  begin match e with 
   | Var x -> Var x
   | Const x -> Const x
   | Add (exp1, exp2) -> 
-    begin match (exp1, exp2) with 
-    | (_, Const 0L) -> exp1
-    | (Const 0L, _) -> exp2
-    | (_  , _ _) -> Add (exp1, exp2)
+    begin match exp1, exp2 with 
+    | _, Const 0L -> optimize exp1
+    | Const 0L, _ -> optimize exp2
+    | Const x, Const y -> Const (Int64.add x y)
+    | Const x, _  -> optimize (Add (Const x, optimize exp2))
+    | _, Const y -> optimize (Add (optimize exp1, Const y))
+    | _  , _  -> Add (optimize exp1, optimize exp2)
     end 
   | Mult (exp1, exp2) -> 
     begin match exp1, exp2 with 
-    | *)
-
+    | Const 0L, _ -> Const 0L
+    | _, Const 0L -> Const 0L
+    | Const 1L, _ -> optimize exp2 
+    | _, Const 1L -> optimize exp1
+    | Const x, Const y -> Const (Int64.mul x y)
+    | Const x, _ -> optimize (Mult (Const x, optimize exp2)) 
+    | _, Const y -> optimize (Mult (optimize exp1, Const y))
+    | _, _ -> Mult (optimize exp1, optimize exp2) 
+    end
+  | Neg exp -> 
+    begin match exp with 
+    | Const 0L -> Const 0L 
+    | Const x -> Const (Int64.neg x)
+    | Neg x -> optimize x
+    | _ ->  optimize (Neg (optimize exp))
+    end 
+  end
 
 (******************************************************************************)
 (*                                                                            *)
@@ -1195,10 +1213,14 @@ let ans1 = run [] p1
 
    - You should test the correctness of your compiler on several examples.
 *)
-let rec compile (e:exp) : program =
-  failwith "compile unimplemented"
-
-
+let rec compile (e:exp) : program = 
+begin match e with  
+| Var x -> [IPushV x]
+| Const x -> [IPushC x]
+| Add (exp1, exp2) -> append (append (compile exp1) (compile exp2)) [IAdd]
+| Mult (exp1, exp2) -> append (append (compile exp1) (compile exp2)) [IMul]
+| Neg exp -> append (compile exp) [INeg] 
+end
 
 (************)
 (* Epilogue *)

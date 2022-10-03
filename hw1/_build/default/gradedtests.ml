@@ -156,12 +156,23 @@ let part4_tests : suite = [
   ]);
 
   GradedTest ("Problem4-5harder", 5, [
+    ("optimize2", assert_eqf (fun () -> optimize (Mult(Const 3L, Mult(Const 0L, Var "x")))) (Const 0L));
+    ("optimize2", assert_eqf (fun () -> optimize (Add(Const 3L, Mult(Const 3L, Mult(Const 0L, Var "x"))))) (Const 3L));
+    ("optimize2", assert_eqf (fun () -> optimize (Neg (Mult(Const 3L, Mult(Const 0L, Var "x"))))) (Const 0L));
+    ("optimize2", assert_eqf (fun () -> optimize (Neg (Neg (Add(Const 3L, Mult(Const 3L, Mult(Const 0L, Var "x"))))))) (Const 3L));
   ]);
 
   GradedTest ("Problem4-5hardest", 5, [
   ]);
 
   GradedTest ("Problem5", 15, [
+    ("compile", assert_eqf (fun () -> compile e1) (p1));
+    ("compile", assert_eqf (fun () -> interpret ctxt2 e2) (run ctxt2 (compile e2)));
+    ("compile", assert_eqf (fun () -> interpret ctxt2 e3) (run ctxt2 (compile e3)));
+    ("compile", assert_eqf (fun () -> interpret ctxt1 e2) (run ctxt1 (compile e2)));
+    ("compile", assert_eqf (fun () -> interpret ctxt1 e1) (run ctxt1 (compile e1)));
+    ("compile", assert_eqf (fun () -> interpret ctxt3 e3) (run ctxt3 (compile e3)));
+    ("compile", assert_eqf (fun () -> interpret ctxt3 e4) (run ctxt3 (compile e4)));
   ]);
 ]
 

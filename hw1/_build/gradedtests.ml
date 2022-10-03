@@ -171,6 +171,8 @@ let part4_tests : suite = [
     ("compile", assert_eqf (fun () -> interpret ctxt2 e3) (run ctxt2 (compile e3)));
     ("compile", assert_eqf (fun () -> interpret ctxt1 e2) (run ctxt1 (compile e2)));
     ("compile", assert_eqf (fun () -> interpret ctxt1 e1) (run ctxt1 (compile e1)));
+    ("compile", assert_eqf (fun () -> interpret ctxt3 e3) (run ctxt3 (compile e3)));
+    ("compile", assert_eqf (fun () -> interpret ctxt3 e4) (run ctxt3 (compile e4)));
   ]);
 ]
 

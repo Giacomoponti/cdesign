@@ -160,9 +160,11 @@ let part4_tests : suite = [
     ("optimize2", assert_eqf (fun () -> optimize (Add(Const 3L, Mult(Const 3L, Mult(Const 0L, Var "x"))))) (Const 3L));
     ("optimize2", assert_eqf (fun () -> optimize (Neg (Mult(Const 3L, Mult(Const 0L, Var "x"))))) (Const 0L));
     ("optimize2", assert_eqf (fun () -> optimize (Neg (Neg (Add(Const 3L, Mult(Const 3L, Mult(Const 0L, Var "x"))))))) (Const 3L));
+    
   ]);
 
   GradedTest ("Problem4-5hardest", 5, [
+    ("optimize1", assert_eqf (fun () -> optimize (Mult( Neg (Const 3L), Neg (Mult(Const 0L, Var "x"))))) (Const 0L));
   ]);
 
   GradedTest ("Problem5", 15, [

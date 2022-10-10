@@ -1066,6 +1066,7 @@ let rec optimize (e:exp) : exp =
     | Const x, Const y -> Const (Int64.mul x y)
     | Const x, _ -> optimize (Mult (Const x, optimize exp2)) 
     | _, Const y -> optimize (Mult (optimize exp1, Const y))
+    | Neg x, Neg y -> optimize (Mult (optimize x, optimize y))
     | _, _ -> Mult (optimize exp1, optimize exp2) 
     end
   | Neg exp -> 

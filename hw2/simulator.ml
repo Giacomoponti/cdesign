@@ -171,7 +171,10 @@ let map_addr (addr:quad) : int option =
 *)
 let step (m:mach) : unit = 
   let instr = m.regs.(rind Rip) in
-      let src, dest = 
+    let opcode = fst instr in     
+      let operands = snd instr in 
+        
+         
 
 (* Runs the machine until the rip register reaches a designated
    memory address. Returns the contents of %rax when the 

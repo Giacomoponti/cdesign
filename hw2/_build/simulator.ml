@@ -158,7 +158,7 @@ let interp_cnd {fo; fs; fz} : cnd -> bool =  function
    or None if the address is not within the legal address space. *)
 let map_addr (addr:quad) : int option =
   let int_addr = Int64.to_int(Int64.sub addr mem_bot) in
-    if (int_addr <= 0 || int_addr >= mem_size) then None
+    if (int_addr < 0 || int_addr >= mem_size) then None
   else Some int_addr 
 
 

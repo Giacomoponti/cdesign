@@ -151,16 +151,12 @@ let interp_cnd {fo; fs; fz} : cnd -> bool =  function
   | Gt -> if (fs == fo && fz != true) then (true) else (false)
   | Ge -> if (fs == fo) then (true) else (false) 
 
-
-
-
 (* Maps an X86lite address into Some OCaml array index,
    or None if the address is not within the legal address space. *)
 let map_addr (addr:quad) : int option =
   let int_addr = Int64.to_int(Int64.sub addr mem_bot) in
     if (int_addr < 0 || int_addr >= mem_size) then None
   else Some int_addr 
-
 
 (* Simulates one step of the machine:
     - fetch the instruction at %rip
@@ -169,8 +165,41 @@ let map_addr (addr:quad) : int option =
     - update the registers and/or memory appropriately
     - set the condition flags
 *)
-let step (m:mach) : unit =
-failwith "step unimplemented"
+let step (m:mach) : unit = 
+  let opcode, operands = Array.get m.mem (Int64.to_int(m.regs.(rind Rip)))   in
+        if (operands.length == 2) then 
+          let (src, dest) = ((hd operands), (nth operands 2)) in
+            begin match opcode with 
+            | Movq -> movq src dest 
+            | Leaq -> ()
+            | Addq -> ()
+            | Subq ->  ()
+            | Imulq -> ()
+            | Xorq -> ()
+            | Orq -> ()
+            | Andq -> ()
+            | Shlq -> ()
+            | Sarq -> ()
+            | Shrq -> ()
+            | J -> ()
+            | Cmpq ->() 
+            | Set -> ()
+            end
+        else if operands.length == 1 then 
+          let src = hd operands in  
+            begin match opcode with 
+            | Pushq -> ()
+            | Popq ->  ()
+            | Incq -> ()
+            | Decq -> ()
+            | Negq -> ()
+            | Notq ->  ()
+            | Jmp -> ()
+            | Callq -> ()
+            end
+          else 
+            ()
+            
 
 (* Runs the machine until the rip register reaches a designated
    memory address. Returns the contents of %rax when the 

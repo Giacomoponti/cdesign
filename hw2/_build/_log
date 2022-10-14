@@ -15,28 +15,11 @@ ocamlfind ocamldep -modules x86/x86.ml > x86/x86.ml.depends # cached
 ocamlfind ocamlc -c -I x86 -I util -o x86/x86.cmo x86/x86.ml # cached
 # Target: simulator.cmo, tags: { package(num), byte, compile, extension:cmo, extension:ml, file:simulator.cmo, file:simulator.ml, implem, ocaml, quiet, traverse }
 ocamlfind ocamlc -c -package num -I util -I x86 -o simulator.cmo simulator.ml
-# Target: studenttests.ml.depends, tags: { package(num), extension:ml, file:studenttests.ml, ocaml, ocamldep, quiet, traverse }
-ocamlfind ocamldep -package num -modules studenttests.ml > studenttests.ml.depends # cached
-# Target: gradedtests.cmo, tags: { package(num), byte, compile, extension:cmo, extension:ml, file:gradedtests.cmo, file:gradedtests.ml, implem, ocaml, quiet, traverse }
-ocamlfind ocamlc -c -package num -I util -I x86 -o gradedtests.cmo gradedtests.ml
-# Target: studenttests.cmo, tags: { package(num), byte, compile, extension:cmo, extension:ml, file:studenttests.cmo, file:studenttests.ml, implem, ocaml, quiet, traverse }
-ocamlfind ocamlc -c -package num -I util -I x86 -o studenttests.cmo studenttests.ml
-# Target: main.cmo, tags: { package(num), byte, compile, extension:cmo, extension:ml, file:main.cmo, file:main.ml, implem, ocaml, quiet, traverse }
-ocamlfind ocamlc -c -package num -I util -I x86 -o main.cmo main.ml
-# Target: util/assert.ml.depends, tags: { extension:ml, file:util/assert.ml, ocaml, ocamldep, quiet, traverse }
-ocamlfind ocamldep -modules util/assert.ml > util/assert.ml.depends # cached
-# Target: util/assert.cmx, tags: { compile, extension:cmx, extension:ml, file:util/assert.cmx, file:util/assert.ml, implem, native, ocaml, quiet, traverse }
-ocamlfind ocamlopt -c -I util -I x86 -o util/assert.cmx util/assert.ml # cached
-# Target: x86/x86.cmx, tags: { compile, extension:cmx, extension:ml, file:x86/x86.cmx, file:x86/x86.ml, implem, native, ocaml, quiet, traverse }
-ocamlfind ocamlopt -c -I x86 -I util -o x86/x86.cmx x86/x86.ml # cached
-# Target: simulator.cmx, tags: { package(num), compile, extension:cmx, extension:ml, file:simulator.cmx, file:simulator.ml, implem, native, ocaml, quiet, traverse }
-ocamlfind ocamlopt -c -package num -I util -I x86 -o simulator.cmx simulator.ml
-# Target: gradedtests.cmx, tags: { package(num), compile, extension:cmx, extension:ml, file:gradedtests.cmx, file:gradedtests.ml, implem, native, ocaml, quiet, traverse }
-ocamlfind ocamlopt -c -package num -I util -I x86 -o gradedtests.cmx gradedtests.ml
-# Target: studenttests.cmx, tags: { package(num), compile, extension:cmx, extension:ml, file:studenttests.cmx, file:studenttests.ml, implem, native, ocaml, quiet, traverse }
-ocamlfind ocamlopt -c -package num -I util -I x86 -o studenttests.cmx studenttests.ml
-# Target: main.cmx, tags: { package(num), compile, extension:cmx, extension:ml, file:main.cmx, file:main.ml, implem, native, ocaml, quiet, traverse }
-ocamlfind ocamlopt -c -package num -I util -I x86 -o main.cmx main.ml
-# Target: main.native, tags: { package(num), dont_link_with, extension:native, file:main.native, link, native, ocaml, program, quiet, traverse }
-ocamlfind ocamlopt unix.cmxa str.cmxa -linkpkg -package num -I x86 -I util x86/x86.cmx simulator.cmx util/assert.cmx gradedtests.cmx studenttests.cmx main.cmx -o main.native
-# Compilation successful.
++ ocamlfind ocamlc -c -package num -I util -I x86 -o simulator.cmo simulator.ml
+File "simulator.ml", line 169, characters 25-74:
+169 |   let opcode, operands = Array.get m.mem (Int64.to_int(m.regs.(rind Rip)))   in
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Error: This expression has type sbyte but an expression was expected of type
+         'a * 'b
+Command exited with code 2.
+# Compilation unsuccessful.

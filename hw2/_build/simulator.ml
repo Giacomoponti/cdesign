@@ -166,40 +166,37 @@ let map_addr (addr:quad) : int option =
     - set the condition flags
 *)
 let step (m:mach) : unit = 
-  let opcode, operands = Array.get m.mem (Int64.to_int(m.regs.(rind Rip)))   in
-        if (operands.length == 2) then 
-          let (src, dest) = ((hd operands), (nth operands 2)) in
-            begin match opcode with 
-            | Movq -> movq src dest 
-            | Leaq -> ()
-            | Addq -> ()
-            | Subq ->  ()
-            | Imulq -> ()
-            | Xorq -> ()
-            | Orq -> ()
-            | Andq -> ()
-            | Shlq -> ()
-            | Sarq -> ()
-            | Shrq -> ()
-            | J -> ()
-            | Cmpq ->() 
-            | Set -> ()
-            end
-        else if operands.length == 1 then 
-          let src = hd operands in  
-            begin match opcode with 
-            | Pushq -> ()
-            | Popq ->  ()
-            | Incq -> ()
-            | Decq -> ()
-            | Negq -> ()
-            | Notq ->  ()
-            | Jmp -> ()
-            | Callq -> ()
-            end
-          else 
-            ()
-            
+  let content = (List.hd (sbytes_of_int64(m.regs.(rind Rip)))) in
+  begin match content with 
+   | (InsB0 (opcode, [src; dest])) -> 
+    begin match opcode with 
+    | Movq -> movq src dest 
+    | Leaq -> ()
+    | Addq -> ()
+    | Subq ->  ()
+    | Imulq -> ()
+    | Xorq -> ()
+    | Orq -> ()
+    | Andq -> ()
+    | Shlq -> ()
+    | Sarq -> ()
+    | Shrq -> ()
+    | J cnd -> ()
+    | Cmpq ->() 
+    | Set cnd -> ()
+    end
+   | InsB0 (opcode, [src]) ->
+      begin match opcode with 
+      | Pushq -> () 
+      | Popq ->  ()
+      | Incq -> ()
+      | Decq -> ()
+      | Negq -> ()
+      | Notq ->  ()
+      | Jmp -> ()
+      | Callq -> ()
+      end
+   end
 
 (* Runs the machine until the rip register reaches a designated
    memory address. Returns the contents of %rax when the 

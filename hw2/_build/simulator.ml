@@ -170,7 +170,15 @@ let step (m:mach) : unit =
   begin match content with 
    | (InsB0 (opcode, [src; dest])) -> 
     begin match opcode with 
-    | Movq -> movq src dest 
+    | Movq -> 
+      begin match src with 
+      | Imm (Lit quad)-> m.regs.(dest) = quad
+      | Imm (Lbl lbl) -> m.regs.(rind dest) = m.regs.(lbl) 
+      | Reg reg -> m.regs.(rind dest) = m.regs.(rind reg)
+      | Ind1 i -> () 
+      | Ind2 reg -> m.regs.(m.regs.(rind dest)) = m.regs.(m.regs.(rind src))  
+      | Ind3 (i, reg) -> () 
+      end
     | Leaq -> ()
     | Addq -> ()
     | Subq ->  ()

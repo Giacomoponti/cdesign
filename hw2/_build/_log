@@ -16,9 +16,10 @@ ocamlfind ocamlc -c -I x86 -I util -o x86/x86.cmo x86/x86.ml # cached
 # Target: simulator.cmo, tags: { package(num), byte, compile, extension:cmo, extension:ml, file:simulator.cmo, file:simulator.ml, implem, ocaml, quiet, traverse }
 ocamlfind ocamlc -c -package num -I util -I x86 -o simulator.cmo simulator.ml
 + ocamlfind ocamlc -c -package num -I util -I x86 -o simulator.cmo simulator.ml
-File "simulator.ml", line 173, characters 14-18:
-173 |     | Movq -> movq src dest 
-                    ^^^^
-Error: Unbound value movq
+File "simulator.ml", line 175, characters 33-37:
+175 |       | Imm (Lit quad)-> m.regs.(dest) = quad
+                                       ^^^^
+Error: This expression has type X86.operand
+       but an expression was expected of type int
 Command exited with code 2.
 # Compilation unsuccessful.

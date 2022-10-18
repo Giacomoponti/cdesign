@@ -212,6 +212,7 @@ let functionality_tests = [
   );
   ("add", machine_test "rax=rbx=*66528=1" 3 add
     (fun m -> m.regs.(rind Rax) = 1L
+          
            && m.regs.(rind Rbx) = 1L
            && int64_of_sbytes (sbyte_list m.mem (mem_size-8)) = 1L
     )
@@ -289,7 +290,7 @@ let instruction_tests = [
     (fun m -> m.regs.(rind Rax) = (Int64.neg 1L)
            && m.regs.(rind Rbx) = 1L
            && int64_of_sbytes (sbyte_list m.mem (mem_size-8)) = (Int64.neg 1L)
-    )
+      )
   );
   ("andq", machine_test "rax=2 rbx=2 rcx=1 *65528=1" 8 andq
     (fun m -> m.regs.(rind Rax) = 2L

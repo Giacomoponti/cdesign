@@ -9,14 +9,136 @@ ocamlfind ocamlc -c -I util -I x86 -o util/assert.cmi util/assert.mli # cached
 ocamlfind ocamldep -package num -modules gradedtests.ml > gradedtests.ml.depends # cached
 # Target: simulator.ml.depends, tags: { package(num), extension:ml, file:simulator.ml, ocaml, ocamldep, quiet, traverse }
 ocamlfind ocamldep -package num -modules simulator.ml > simulator.ml.depends
-+ ocamlfind ocamldep -package num -modules simulator.ml > simulator.ml.depends
-File "simulator.ml", line 196, characters 63-65:
-196 |     | [x; Ind1 y] -> ((m.mem.(Option.get (map_addr(immer y)))) <- List.hd@@sbytes_of_int64 (Int64.add (decosrc x m) (int64_of_sbytes (m.mem.(Option.get (map_addr(immer y))))::[])))
-                                                                     ^^
-Error: Syntax error: ')' expected
-File "simulator.ml", line 196, characters 21-22:
-196 |     | [x; Ind1 y] -> ((m.mem.(Option.get (map_addr(immer y)))) <- List.hd@@sbytes_of_int64 (Int64.add (decosrc x m) (int64_of_sbytes (m.mem.(Option.get (map_addr(immer y))))::[])))
-                           ^
-  This '(' might be unmatched
-Command exited with code 2.
-# Compilation unsuccessful.
+# Target: x86/x86.ml.depends, tags: { extension:ml, file:x86/x86.ml, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -modules x86/x86.ml > x86/x86.ml.depends # cached
+# Target: x86/x86.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:x86/x86.cmo, file:x86/x86.ml, implem, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -I x86 -I util -o x86/x86.cmo x86/x86.ml # cached
+# Target: simulator.cmo, tags: { package(num), byte, compile, extension:cmo, extension:ml, file:simulator.cmo, file:simulator.ml, implem, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -package num -I util -I x86 -o simulator.cmo simulator.ml
++ ocamlfind ocamlc -c -package num -I util -I x86 -o simulator.cmo simulator.ml
+File "simulator.ml", lines 206-211, characters 2-5:
+206 | ..begin match l with
+207 |     |[x; Reg y] -> (m.regs.(rind y) <- decosrc x m)
+208 |     |[x; Ind1 y] -> (m.mem.(Option.get (map_addr(immer y))) <- List.hd@@sbytes_of_int64 (decosrc x m))
+209 |     |[x; Ind2 y] -> (m.mem.(Option.get (map_addr((m.regs.(rind y))))) <- List.hd@@sbytes_of_int64 (decosrc x m))
+210 |     |[x; Ind3 (y, z)] -> (m.mem.(Int64.to_int (immer y) + (Option.get (map_addr((m.regs.(rind z)))))) <- List.hd (sbytes_of_int64(decosrc x m)))
+211 |   end
+Warning 8 [partial-match]: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+_::Reg _::_::_
+File "simulator.ml", line 244, characters 6-11:
+244 |   let neg_y = negq src m in 
+            ^^^^^
+Warning 26 [unused-var]: unused variable neg_y.
+File "simulator.ml", line 258, characters 8-14:
+258 |     let update = updater m in 
+              ^^^^^^
+Warning 26 [unused-var]: unused variable update.
+File "simulator.ml", line 263, characters 22-30:
+263 |         | Addq -> let move_src = movq [src; Reg Rdi] m in
+                            ^^^^^^^^
+Warning 26 [unused-var]: unused variable move_src.
+File "simulator.ml", line 264, characters 24-32:
+264 |                     let move_dst = movq [dest; Reg Rsi] m in 
+                              ^^^^^^^^
+Warning 26 [unused-var]: unused variable move_dst.
+File "simulator.ml", line 265, characters 26-34:
+265 |                       let addition = addq (Reg Rdi) (Reg Rsi) m in 
+                                ^^^^^^^^
+Warning 26 [unused-var]: unused variable addition.
+File "simulator.ml", line 268, characters 22-30:
+268 |         | Subq -> let move_src = movq [src; Reg Rdi] m in
+                            ^^^^^^^^
+Warning 26 [unused-var]: unused variable move_src.
+File "simulator.ml", line 269, characters 24-32:
+269 |                     let move_dst = movq [dest; Reg Rsi] m in 
+                              ^^^^^^^^
+Warning 26 [unused-var]: unused variable move_dst.
+File "simulator.ml", line 270, characters 26-37:
+270 |                       let subtraction = subq (Reg Rdi) (Reg Rsi) m in 
+                                ^^^^^^^^^^^
+Warning 26 [unused-var]: unused variable subtraction.
+File "simulator.ml", line 276, characters 20-24:
+276 |       | Negq -> let move = movq [src; Reg Rdi] in 
+                          ^^^^
+Warning 26 [unused-var]: unused variable move.
+File "simulator.ml", line 277, characters 22-30:
+277 |                   let negation = negq (Reg Rdi) m in 
+                            ^^^^^^^^
+Warning 26 [unused-var]: unused variable negation.
+# Target: studenttests.ml.depends, tags: { package(num), extension:ml, file:studenttests.ml, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package num -modules studenttests.ml > studenttests.ml.depends # cached
+# Target: gradedtests.cmo, tags: { package(num), byte, compile, extension:cmo, extension:ml, file:gradedtests.cmo, file:gradedtests.ml, implem, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -package num -I util -I x86 -o gradedtests.cmo gradedtests.ml
+# Target: studenttests.cmo, tags: { package(num), byte, compile, extension:cmo, extension:ml, file:studenttests.cmo, file:studenttests.ml, implem, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -package num -I util -I x86 -o studenttests.cmo studenttests.ml
+# Target: main.cmo, tags: { package(num), byte, compile, extension:cmo, extension:ml, file:main.cmo, file:main.ml, implem, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -package num -I util -I x86 -o main.cmo main.ml
+# Target: util/assert.ml.depends, tags: { extension:ml, file:util/assert.ml, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -modules util/assert.ml > util/assert.ml.depends # cached
+# Target: util/assert.cmx, tags: { compile, extension:cmx, extension:ml, file:util/assert.cmx, file:util/assert.ml, implem, native, ocaml, quiet, traverse }
+ocamlfind ocamlopt -c -I util -I x86 -o util/assert.cmx util/assert.ml # cached
+# Target: x86/x86.cmx, tags: { compile, extension:cmx, extension:ml, file:x86/x86.cmx, file:x86/x86.ml, implem, native, ocaml, quiet, traverse }
+ocamlfind ocamlopt -c -I x86 -I util -o x86/x86.cmx x86/x86.ml # cached
+# Target: simulator.cmx, tags: { package(num), compile, extension:cmx, extension:ml, file:simulator.cmx, file:simulator.ml, implem, native, ocaml, quiet, traverse }
+ocamlfind ocamlopt -c -package num -I util -I x86 -o simulator.cmx simulator.ml
++ ocamlfind ocamlopt -c -package num -I util -I x86 -o simulator.cmx simulator.ml
+File "simulator.ml", lines 206-211, characters 2-5:
+206 | ..begin match l with
+207 |     |[x; Reg y] -> (m.regs.(rind y) <- decosrc x m)
+208 |     |[x; Ind1 y] -> (m.mem.(Option.get (map_addr(immer y))) <- List.hd@@sbytes_of_int64 (decosrc x m))
+209 |     |[x; Ind2 y] -> (m.mem.(Option.get (map_addr((m.regs.(rind y))))) <- List.hd@@sbytes_of_int64 (decosrc x m))
+210 |     |[x; Ind3 (y, z)] -> (m.mem.(Int64.to_int (immer y) + (Option.get (map_addr((m.regs.(rind z)))))) <- List.hd (sbytes_of_int64(decosrc x m)))
+211 |   end
+Warning 8 [partial-match]: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+_::Reg _::_::_
+File "simulator.ml", line 244, characters 6-11:
+244 |   let neg_y = negq src m in 
+            ^^^^^
+Warning 26 [unused-var]: unused variable neg_y.
+File "simulator.ml", line 258, characters 8-14:
+258 |     let update = updater m in 
+              ^^^^^^
+Warning 26 [unused-var]: unused variable update.
+File "simulator.ml", line 263, characters 22-30:
+263 |         | Addq -> let move_src = movq [src; Reg Rdi] m in
+                            ^^^^^^^^
+Warning 26 [unused-var]: unused variable move_src.
+File "simulator.ml", line 264, characters 24-32:
+264 |                     let move_dst = movq [dest; Reg Rsi] m in 
+                              ^^^^^^^^
+Warning 26 [unused-var]: unused variable move_dst.
+File "simulator.ml", line 265, characters 26-34:
+265 |                       let addition = addq (Reg Rdi) (Reg Rsi) m in 
+                                ^^^^^^^^
+Warning 26 [unused-var]: unused variable addition.
+File "simulator.ml", line 268, characters 22-30:
+268 |         | Subq -> let move_src = movq [src; Reg Rdi] m in
+                            ^^^^^^^^
+Warning 26 [unused-var]: unused variable move_src.
+File "simulator.ml", line 269, characters 24-32:
+269 |                     let move_dst = movq [dest; Reg Rsi] m in 
+                              ^^^^^^^^
+Warning 26 [unused-var]: unused variable move_dst.
+File "simulator.ml", line 270, characters 26-37:
+270 |                       let subtraction = subq (Reg Rdi) (Reg Rsi) m in 
+                                ^^^^^^^^^^^
+Warning 26 [unused-var]: unused variable subtraction.
+File "simulator.ml", line 276, characters 20-24:
+276 |       | Negq -> let move = movq [src; Reg Rdi] in 
+                          ^^^^
+Warning 26 [unused-var]: unused variable move.
+File "simulator.ml", line 277, characters 22-30:
+277 |                   let negation = negq (Reg Rdi) m in 
+                            ^^^^^^^^
+Warning 26 [unused-var]: unused variable negation.
+# Target: gradedtests.cmx, tags: { package(num), compile, extension:cmx, extension:ml, file:gradedtests.cmx, file:gradedtests.ml, implem, native, ocaml, quiet, traverse }
+ocamlfind ocamlopt -c -package num -I util -I x86 -o gradedtests.cmx gradedtests.ml
+# Target: studenttests.cmx, tags: { package(num), compile, extension:cmx, extension:ml, file:studenttests.cmx, file:studenttests.ml, implem, native, ocaml, quiet, traverse }
+ocamlfind ocamlopt -c -package num -I util -I x86 -o studenttests.cmx studenttests.ml
+# Target: main.cmx, tags: { package(num), compile, extension:cmx, extension:ml, file:main.cmx, file:main.ml, implem, native, ocaml, quiet, traverse }
+ocamlfind ocamlopt -c -package num -I util -I x86 -o main.cmx main.ml
+# Target: main.native, tags: { package(num), dont_link_with, extension:native, file:main.native, link, native, ocaml, program, quiet, traverse }
+ocamlfind ocamlopt unix.cmxa str.cmxa -linkpkg -package num -I x86 -I util x86/x86.cmx simulator.cmx util/assert.cmx gradedtests.cmx studenttests.cmx main.cmx -o main.native
+# Compilation successful.

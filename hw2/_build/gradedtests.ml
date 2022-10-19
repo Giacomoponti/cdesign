@@ -134,7 +134,7 @@ let interp_cnd_test (fo, fs, fz) tru () =
 
 let cc_test (s:string) (n: int) (m: mach) (fo', fs', fz') (f: mach -> bool) () =
   let m' = {m with flags = {fo=fo';fs=fs';fz=fz'}} in
-  for i=1 to n do step m' done;
+  for i=1 to n do step m'; done;
   if (f m') then () else failwith s
 
 let cs_test (n:int) (m:mach) (fo',fs',fz') =

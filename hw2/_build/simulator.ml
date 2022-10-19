@@ -182,32 +182,38 @@ let decosrc (o:operand) (m:mach) : int64 =
   end
 
 let decodst (o:operand) (m:mach) : sbyte =
- begin match o with
+  begin match o with
+   |Imm y -> invalid_arg "Destination cannot be Immediate"
+   |Reg y -> List.hd@@sbytes_of_int64 (m.regs.(rind y))
+   |Ind1 y -> m.mem.(Option.get (map_addr(immer y)))
+   |Ind2 y -> m.mem.(Option.get (map_addr(m.regs.(rind y))))
+   |Ind3 (y, z) -> m.mem.(Int64.to_int (immer y) + (Option.get (map_addr((m.regs.(rind z))))))
+  end
+  (*begin match o with
    |Imm y -> invalid_arg "no immediate destination"
    |Reg y -> List.hd (sbytes_of_int64 m.regs.(rind y))
    |Ind1 y -> m.mem.(Option.get (map_addr(immer y)))
    |Ind2 y -> m.mem.(Option.get (map_addr(m.regs.(rind y))))
    |Ind3 (y, z) -> m.mem.(Int64.to_int (immer y) + (Option.get (map_addr((m.regs.(rind z))))))
-  end
+  end*)
+
+let sign (n:quad) : (int) =  
+    Int64.compare n 0L
 
 let addq (src:operand) (dest:operand) (m:mach) : unit = 
   match src, dest with 
   | Reg x, Reg y -> let src_value = (m.regs.(rind x)) in 
                       let dst_value = (m.regs.(rind y)) in 
                         let res = (Int64.add src_value dst_value) in
-                          let print = Printf.printf "%s\n" (Int64.to_string res) in 
+                          (*let print = Printf.printf "%s\n" (Int.to_string (sign res)) in *) 
                         	let assign = m.regs.(rind y) <- (res) in 
-                            let sign n = 
-                              match n with 
-                              | 0L -> 0
-                              | _ ->  Int64.to_int (Int64.div n (Int64.abs(n))) 
-                            in 
                             begin 
-                              if ((sign src_value) = (sign dst_value)) && ((sign src_value) = -(sign res)) then m.flags.fo <- true;  
-                              if (sign res = 0) then m.flags.fz <- true;
+                              if (((sign src_value) = (sign dst_value)) && ((sign src_value) <> (sign res))) then m.flags.fo <- true
+                              else m.flags.fo <- false;  
+                              if (sign res = 0) then m.flags.fz <- true
+                              else m.flags.fz <- false;
                               if (sign res = -1) then m.flags.fs <- true
-                              else m.flags.fs <- false;
-                              
+                              else m.flags.fs <- false; 
                             end
   | _, _ -> invalid_arg "args not in registers"
   (*begin match l with 
@@ -220,20 +226,40 @@ let addq (src:operand) (dest:operand) (m:mach) : unit =
 
 let movq (l:operand list) (m:mach) : unit =
   begin match l with
+    |[x; Imm y] -> invalid_arg "Immediate cannot be a location"
     |[x; Reg y] -> (m.regs.(rind y) <- decosrc x m)
     |[x; Ind1 y] -> (m.mem.(Option.get (map_addr(immer y))) <- List.hd@@sbytes_of_int64 (decosrc x m))
     |[x; Ind2 y] -> (m.mem.(Option.get (map_addr((m.regs.(rind y))))) <- List.hd@@sbytes_of_int64 (decosrc x m))
-    |[x; Ind3 (y, z)] -> (m.mem.(Int64.to_int (immer y) + (Option.get (map_addr((m.regs.(rind z)))))) <- List.hd (sbytes_of_int64(decosrc x m)))
+    |[x; Ind3 (y, z)] -> (m.mem.(Option.get@@map_addr (Int64.add (immer y) (m.regs.(rind z)))) <- List.hd@@sbytes_of_int64(decosrc x m))
   end
-
-let negq (l:operand) (m:mach) : unit = (*begin match l with | Reg y -> (m.regs.(rind y) <- Int64.neg (m.regs.(rind y))) | _ -> invalid_arg "not in reg" end*)
-  begin match l with 
-  | Imm y -> invalid_arg "Dest cannot be imm"
-  | Reg y -> (m.regs.(rind y) <- Int64.neg (m.regs.(rind y)))
-  | Ind1 y -> (m.mem.(Option.get (map_addr(immer y))) <- List.hd@@sbytes_of_int64 (Int64.neg (decosrc (Ind1 y) m)))
-  | Ind2 y -> (m.mem.(Option.get (map_addr((m.regs.(rind y))))) <- List.hd@@sbytes_of_int64 (Int64.neg (decosrc (Ind2 y) m)))
-  | Ind3 (y, z) -> (m.mem.(Int64.to_int (immer y) + (Option.get (map_addr((m.regs.(rind z)))))) <- List.hd@@sbytes_of_int64 (Int64.neg (decosrc (Ind3 (y, z)) m)))
-  end
+let notq (l:operand) (m:mach) : unit  = 
+match l with 
+  | Reg x -> let n = m.regs.(rind x) in 
+              m.regs.(rind x) <- Int64.lognot (n)
+  | _ -> invalid_arg "not in reg"
+let negq (l:operand) (m:mach) : unit = 
+    let check =  if (Int64.equal (decosrc l m) (Int64.min_int)) then m.flags.fo <- true 
+                  else m.flags.fo <- false in
+    let mov = movq [l; Reg Rdi] m in 
+    let not = notq (Reg Rdi) m in
+    let value = Int64.add (decosrc (Reg Rdi) m) (1L) in
+      let mat = 
+        match l with 
+        | Imm y -> invalid_arg "Dest cannot be imm"
+        | Reg y -> (m.regs.(rind y) <- Int64.add (1L) (Int64.lognot m.regs.(rind y)))
+        | Ind1 y -> (m.mem.(Option.get (map_addr(immer y))) <- List.hd@@sbytes_of_int64 (value))
+        | Ind2 y -> (m.mem.(Option.get (map_addr((m.regs.(rind y))))) <- List.hd@@sbytes_of_int64 (value))
+        | Ind3 (y, z) -> (m.mem.(Option.get@@map_addr (Int64.add (immer y) (m.regs.(rind z)))) <- List.hd@@sbytes_of_int64 (value))
+      in
+      begin 
+        if ((sign value) = 0) then m.flags.fz <- true else m.flags.fz <- false;
+        if ((sign value) = -1) then m.flags.fs <- true else m.flags.fs <- false;
+        (*Printf.printf "%s \n" (Int64.to_string value);        
+        Printf.printf "%s \n" (Int.to_string@@sign value);
+        Printf.printf "%s" (Bool.to_string m.flags.fo);
+        Printf.printf "%s" (Bool.to_string m.flags.fs);
+        Printf.printf "%s\n" (Bool.to_string m.flags.fz);*)
+      end
 
 let incq (l:operand) (m:mach) : unit =
   begin match l with 
@@ -252,10 +278,19 @@ let decq (l:operand) (m:mach) : unit =
     | Ind2 y -> (m.mem.(Option.get (map_addr((m.regs.(rind y))))) <- List.hd@@sbytes_of_int64 (Int64.sub (decosrc (Ind2 y) m) 1L))
     | Ind3 (y, z) -> (m.mem.(Int64.to_int (immer y) + (Option.get (map_addr((m.regs.(rind z)))))) <- List.hd@@sbytes_of_int64 (Int64.sub (decosrc (Ind3 (y, z)) m) 1L))
   end
- 
-let subq (src:operand) (dest:operand) (m:mach) : unit =  
-  let neg_y = negq src m in 
-    (addq src dest m) 
+  let rec copier (b: sbyte list) (addr: int)(m:mach) : unit =
+    match b with
+      |x::[]-> m.mem.(addr) <- x  
+      |h::tl-> m.mem.(addr) <- h; copier tl (addr+1) m
+
+  let subq (l:operand list) (m:mach) : unit =
+    match l with
+      |[x; Reg y] -> m.regs.(rind y) <- Int64.sub (m.regs.(rind y)) (decosrc x m)
+      |[x; Ind1 y] -> copier (sbytes_of_int64(Int64.sub (decodst (Ind1 y) m) (decosrc x m))) (Option.get (map_addr(immer y))) m
+      |[x; Ind2 y] -> copier (sbytes_of_int64(Int64.sub (decodst (Ind2 y) m) (decosrc x m))) (Option.get (map_addr((m.regs.(rind y))))) m
+      |[x; Ind3 (y, z)] -> copier (sbytes_of_int64(Int64.sub (decodst (Ind3 (y, z)) m) (decosrc x m))) (Int64.to_int (immer y) + (Option.get (map_addr((m.regs.(rind z)))))) m
+
+      
   (*| [x; Reg y] -> m.regs.(rind y) <- (Int64.add (decosrc x m) (m.regs.(rind y)))
   | [x; Ind1 y] -> m.mem.(Option.get (map_addr(immer y))) <- List.hd@@sbytes_of_int64 (Int64.sub (int64_of_sbytes (m.mem.(Option.get (map_addr(immer y)))::[])) (decosrc x m) )
   | [x; Ind2 y] -> m.mem.(Option.get (map_addr(m.regs.(rind y)))) <- List.hd@@sbytes_of_int64 (Int64.sub (int64_of_sbytes (m.mem.(Option.get (map_addr(m.regs.(rind y))))::[])) (decosrc x m) )
@@ -280,6 +315,36 @@ let popq (l:operand) (m:mach) : unit =
                       in (m.regs.(rind Rsp) <- (Int64.add m.regs.(rind Rsp) 8L))
 end
 
+let andq (Reg x) (Reg y) (m:mach) : unit = 
+  let value = Int64.logand (m.regs.(rind x)) (m.regs.(rind y)) in 
+    let update = m.regs.(rind y) <- value  in
+      begin 
+        m.flags.fo <- false;
+        if (sign value = 0) then m.flags.fz <- true else m.flags.fz <- false;
+        if (sign value = -1) then m.flags.fs <- true else m.flags.fs <- false
+      end
+let orq (Reg x) (Reg y) (m:mach) : unit = 
+  let value = Int64.logor (m.regs.(rind x)) (m.regs.(rind y)) in 
+    let update = m.regs.(rind y) <- value  in
+      begin 
+        m.flags.fo <- false;
+        if (sign value = 0) then m.flags.fz <- true else m.flags.fz <- false;
+        if (sign value = -1) then m.flags.fs <- true else m.flags.fs <- false
+      end
+
+let imulq (Reg x) (Reg y) (m:mach) : unit = 
+  let value = Int64.mul (m.regs.(rind x)) (m.regs.(rind y)) in
+    begin 
+      if ((sign (m.regs.(rind x)) <> sign ((m.regs.(rind y))) && sign(value) = 1) || (sign (m.regs.(rind x)) == sign ((m.regs.(rind y))) && sign(value) = -1)) 
+        then m.flags.fo <- true 
+      else m.flags.fo <- false; 
+      m.regs.(rind y) <- value;
+    end  
+      
+let shlq (Reg x) (Reg y) (m:mach) : unit =
+  m.regs.(rind y) <- Int64.shift_left (m.regs.(rind y)) (Int64.to_int m.regs.(rind x))  
+
+
 let updater (m:mach) : unit = 
   match m with 
   | _ -> m.regs.(rind Rip) <- Int64.add (m.regs.(rind Rip)) 8L
@@ -296,20 +361,42 @@ let step (m:mach) : unit =
                       let addition = addq (Reg Rdi) (Reg Rsi) m in 
                         movq [Reg Rsi; dest] m 
 
-        | Subq -> let move_src = movq [src; Reg Rdi] m in
+        | Subq -> subq src dest m 
+        | Andq -> let move_src = movq [src; Reg Rdi] m in
                     let move_dst = movq [dest; Reg Rsi] m in 
-                      let subtraction = subq (Reg Rdi) (Reg Rsi) m in 
-                        movq [Reg Rsi; dest] m 
+                      let log_and = andq (Reg Rdi) (Reg Rsi) m in 
+                        movq [Reg Rsi; dest] m
+        | Imulq -> let move_src = movq [src; Reg Rdi] m in
+                    let move_dst = movq [dest; Reg Rsi] m in 
+                      let mult = imulq (Reg Rdi) (Reg Rsi) m in 
+                        movq [Reg Rsi; dest] m
+        | Orq -> let move_src = movq [src; Reg Rdi] m in
+                  let move_dst = movq [dest; Reg Rsi] m in 
+                    let log_or = orq (Reg Rdi) (Reg Rsi) m in 
+                      movq [Reg Rsi; dest] m
+        | Shlq -> begin match src with
+                    | Imm x -> let move_src = movq [src; Reg Rdi] m in
+                                let move_dst = movq [dest; Reg Rsi] m in 
+                                  let log_or = shlq (Reg Rdi) (Reg Rsi) m in 
+                                    movq [Reg Rsi; dest] m
+                    | Reg Rcx -> let move_src = movq [src; Reg Rdi] m in
+                                  let move_dst = movq [dest; Reg Rsi] m in 
+                                    let log_or = shlq (Reg Rdi) (Reg Rsi) m in 
+                                      movq [Reg Rsi; dest] m
+                    | _ -> invalid_arg "amt must be imm or rcx" 
+                  end
         | _ -> ()
         end
     | InsB0 (opcode, [src]) -> 
       begin match opcode with 
-      | Negq -> negq src m (*let move = movq [src; Reg Rdi] in let negation = negq (Reg Rdi) m in movq [Reg Rdi; src] m*)
+      | Negq ->  negq src m
       | Incq -> incq src m
       | Decq -> decq src m
       | Pushq -> pushq src m
+      | Popq -> popq src m
       | _ -> ()
       end
+    | InsB0 (Retq, []) -> popq (Reg Rip) m  
     | InsFrag -> invalid_arg "InsFrag"
     | Byte c -> invalid_arg "Byte"
     | _ -> invalid_arg "not an instruction" 

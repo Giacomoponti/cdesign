@@ -278,6 +278,7 @@ let decq (l:operand) (m:mach) : unit =
     | Ind2 y -> (m.mem.(Option.get (map_addr((m.regs.(rind y))))) <- List.hd@@sbytes_of_int64 (Int64.sub (decosrc (Ind2 y) m) 1L))
     | Ind3 (y, z) -> (m.mem.(Int64.to_int (immer y) + (Option.get (map_addr((m.regs.(rind z)))))) <- List.hd@@sbytes_of_int64 (Int64.sub (decosrc (Ind3 (y, z)) m) 1L))
   end
+
   let rec copier (b: sbyte list) (addr: int)(m:mach) : unit =
     match b with
       |x::[]-> m.mem.(addr) <- x  
@@ -286,9 +287,9 @@ let decq (l:operand) (m:mach) : unit =
   let subq (l:operand list) (m:mach) : unit =
     match l with
       |[x; Reg y] -> m.regs.(rind y) <- Int64.sub (m.regs.(rind y)) (decosrc x m)
-      |[x; Ind1 y] -> copier (sbytes_of_int64(Int64.sub (decodst (Ind1 y) m) (decosrc x m))) (Option.get (map_addr(immer y))) m
-      |[x; Ind2 y] -> copier (sbytes_of_int64(Int64.sub (decodst (Ind2 y) m) (decosrc x m))) (Option.get (map_addr((m.regs.(rind y))))) m
-      |[x; Ind3 (y, z)] -> copier (sbytes_of_int64(Int64.sub (decodst (Ind3 (y, z)) m) (decosrc x m))) (Int64.to_int (immer y) + (Option.get (map_addr((m.regs.(rind z)))))) m
+      |[x; Ind1 y] -> copier (sbytes_of_int64(Int64.sub (decosrc (Ind1 y) m) (decosrc x m))) (Option.get (map_addr(immer y))) m
+      |[x; Ind2 y] -> copier (sbytes_of_int64(Int64.sub (decosrc (Ind2 y) m) (decosrc x m))) (Option.get (map_addr((m.regs.(rind y))))) m
+      |[x; Ind3 (y, z)] -> copier (sbytes_of_int64(Int64.sub (decosrc (Ind3 (y, z)) m) (decosrc x m))) (Int64.to_int (immer y) + (Option.get (map_addr((m.regs.(rind z)))))) m
 
       
   (*| [x; Reg y] -> m.regs.(rind y) <- (Int64.add (decosrc x m) (m.regs.(rind y)))
@@ -344,6 +345,26 @@ let imulq (Reg x) (Reg y) (m:mach) : unit =
 let shlq (Reg x) (Reg y) (m:mach) : unit =
   m.regs.(rind y) <- Int64.shift_left (m.regs.(rind y)) (Int64.to_int m.regs.(rind x))  
 
+let cmpq (Reg x) (Reg y) (m:mach) =
+  let src_value = m.regs.(rind x) in
+    let dst_value = m.regs.(rind y) in
+      let neg = negq (Reg x) m in 
+        let neg_src = m.regs.(rind x) in 
+      let res = Int64.add dst_value neg_src in
+      begin 
+        if (((sign dst_value = sign neg_src) && (sign res <> sign neg_src)) || ((src_value = Int64.min_int))) then m.flags.fo <- true 
+        else m.flags.fo <- false; 
+        if (sign res = -1) then m.flags.fs <- true 
+        else m.flags.fs <- false;
+        if (sign res = 0) then m.flags.fz <- true 
+        else m.flags.fz <- false;
+
+        Printf.printf "%s \n" (Int64.to_string res);        
+        Printf.printf "%s \n" (Int.to_string@@sign res);
+        Printf.printf "%s" (Bool.to_string m.flags.fo);
+        Printf.printf "%s" (Bool.to_string m.flags.fs);
+        Printf.printf "%s\n" (Bool.to_string m.flags.fz);
+      end
 
 let updater (m:mach) : unit = 
   match m with 
@@ -361,7 +382,7 @@ let step (m:mach) : unit =
                       let addition = addq (Reg Rdi) (Reg Rsi) m in 
                         movq [Reg Rsi; dest] m 
 
-        | Subq -> subq src dest m 
+        | Subq -> subq [src; dest] m 
         | Andq -> let move_src = movq [src; Reg Rdi] m in
                     let move_dst = movq [dest; Reg Rsi] m in 
                       let log_and = andq (Reg Rdi) (Reg Rsi) m in 
@@ -385,6 +406,9 @@ let step (m:mach) : unit =
                                       movq [Reg Rsi; dest] m
                     | _ -> invalid_arg "amt must be imm or rcx" 
                   end
+        | Cmpq -> let move_src = movq [src; Reg Rdi] m in
+            let move_dst = movq [dest; Reg Rsi] m in 
+              cmpq (Reg Rdi) (Reg Rsi) m 
         | _ -> ()
         end
     | InsB0 (opcode, [src]) -> 
@@ -438,8 +462,26 @@ exception Redefined_sym of lbl
 
   HINT: List.fold_left and List.fold_right are your friends.
  *)
-let assemble (p:prog) : exec =
-failwith "assemble unimplemented"
+
+
+
+let process_elem (exe:exec) (e:elem) : exec =
+  let lbl = e.lbl in
+    let global = e.global in 
+      let asm = e.asm in 
+        begin match lbl with 
+        | text -> exe
+        | data -> exe
+        end
+
+let assemble (p:prog) : exec = 
+  let exe : exec = {entry = (Int64.add mem_bot 8L);
+                    text_pos = mem_bot; 
+                    data_pos = 0L; 
+                    text_seg = []; 
+                    data_seg = []
+                    } in
+    List.fold_left process_elem exe p
 
 (* Convert an object file into an executable machine state. 
     - allocate the mem array

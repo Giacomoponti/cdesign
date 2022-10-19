@@ -1,1 +1,1 @@
-simulator.ml: Array Char Int64 List Option String X86
+simulator.ml: Array Bool Char Int Int64 List Option Printf String X86

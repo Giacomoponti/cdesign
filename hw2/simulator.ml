@@ -470,14 +470,16 @@ let process_elem (exe:exec) (e:elem) : exec =
     let global = e.global in 
       let asm = e.asm in 
         begin match lbl with 
-        | text -> exe
-        | data -> exe
+        | text -> if(exe.entry = mem_bot) then exe.entry <- Int64.add mem_bot 8L 
+        | data -> if (exe.data_pos = mem_bot) then exe.data_pos <- Int64.add exe.text_pos (Int64.of_int@@List.length(exe.text_seg))
         end
 
 let assemble (p:prog) : exec = 
-  let exe : exec = {entry = (Int64.add mem_bot 8L);
+  let txt_segment, data_seg = divide (p) in 
+
+    let exe : exec = {entry = mem_bot;
                     text_pos = mem_bot; 
-                    data_pos = 0L; 
+                    data_pos = mem_bot; 
                     text_seg = []; 
                     data_seg = []
                     } in
@@ -496,5 +498,4 @@ let assemble (p:prog) : exec =
   Hint: The Array.make, Array.blit, and Array.of_list library functions 
   may be of use.
 *)
-let load {entry; text_pos; data_pos; text_seg; data_seg} : mach = 
-failwith "load unimplemented"
+let load {entry; text_pos; data_pos; text_seg; data_seg} : mach = ()

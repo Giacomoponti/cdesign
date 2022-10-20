@@ -3,7 +3,7 @@
 # Shared cache: disabled
 # Workspace root: /home/gponti/cdesign/hw2
 # Auto-detected concurrency: 16
-$ /home/gponti/.opam/4.13.1/bin/ocamlc.opt -config > /tmp/dune_c0bd46_output
+$ /home/gponti/.opam/4.13.1/bin/ocamlc.opt -config > /tmp/dune_565325_output
 # Dune context:
 #  { name = "default"
 #  ; kind = "default"
@@ -118,5 +118,5 @@ $ (cd _build/default && /home/gponti/.opam/4.13.1/bin/ocamlopt.opt -w @1..3@5..2
 $ (cd _build/default && /home/gponti/.opam/4.13.1/bin/ocamlopt.opt -w @1..3@5..28@30..39@43@46..47@49..57@61..62@67@69-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -I bin/.main.eobjs/byte -I bin/.main.eobjs/native -I lib/.hw2.objs/byte -I lib/.hw2.objs/native -intf-suffix .ml -no-alias-deps -opaque -o bin/.main.eobjs/native/dune__exe__Main.cmx -c -impl bin/main.ml)
 $ (cd _build/default && /home/gponti/.opam/4.13.1/bin/ocamlopt.opt -w @1..3@5..28@30..39@43@46..47@49..57@61..62@67@69-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -a -o lib/hw2.cmxa lib/.hw2.objs/native/hw2.cmx)
 $ (cd _build/default && /home/gponti/.opam/4.13.1/bin/ocamlopt.opt -w @1..3@5..28@30..39@43@46..47@49..57@61..62@67@69-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -shared -linkall -I lib -o lib/hw2.cmxs lib/hw2.cmxa)
-$ (cd _build/default && /home/gponti/.opam/4.13.1/bin/ocamlopt.opt -w @1..3@5..28@30..39@43@46..47@49..57@61..62@67@69-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -o test/hw2.exe test/.hw2.eobjs/native/dune__exe__Hw2.cmx)
 $ (cd _build/default && /home/gponti/.opam/4.13.1/bin/ocamlopt.opt -w @1..3@5..28@30..39@43@46..47@49..57@61..62@67@69-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -o bin/main.exe lib/hw2.cmxa bin/.main.eobjs/native/dune__exe__Main.cmx)
+$ (cd _build/default && /home/gponti/.opam/4.13.1/bin/ocamlopt.opt -w @1..3@5..28@30..39@43@46..47@49..57@61..62@67@69-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -o test/hw2.exe test/.hw2.eobjs/native/dune__exe__Hw2.cmx)

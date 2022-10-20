@@ -359,11 +359,11 @@ let cmpq (Reg x) (Reg y) (m:mach) =
         if (sign res = 0) then m.flags.fz <- true 
         else m.flags.fz <- false;
 
-        Printf.printf "%s \n" (Int64.to_string res);        
+        (*Printf.printf "%s \n" (Int64.to_string res);        
         Printf.printf "%s \n" (Int.to_string@@sign res);
         Printf.printf "%s" (Bool.to_string m.flags.fo);
         Printf.printf "%s" (Bool.to_string m.flags.fs);
-        Printf.printf "%s\n" (Bool.to_string m.flags.fz);
+        Printf.printf "%s\n" (Bool.to_string m.flags.fz);*)
       end
 
 let updater (m:mach) : unit = 
@@ -464,25 +464,28 @@ exception Redefined_sym of lbl
  *)
 
 
+let rec text_len (p:prog) (i:int) : int = 
+  begin match p with 
+  | [] -> i
+  | x::xs -> begin match x.asm with 
+            | Text ins_list -> text_len xs (i + List.length ins_list)
+            | _ -> text_len xs i
+            end
+end
 
-let process_elem (exe:exec) (e:elem) : exec =
-  let lbl = e.lbl in
-    let global = e.global in 
-      let asm = e.asm in 
-        begin match lbl with 
-        | text -> if(exe.entry = mem_bot) then exe.entry <- Int64.add mem_bot 8L 
-        | data -> if (exe.data_pos = mem_bot) then exe.data_pos <- Int64.add exe.text_pos (Int64.of_int@@List.length(exe.text_seg))
-        end
 
-let assemble (p:prog) : exec = 
-  let exe : exec = {entry = mem_bot;
-                    text_pos = mem_bot; 
-                    data_pos = mem_bot; 
-                    text_seg = []; 
-                    data_seg = []
-                    } in
-    List.fold_left process_elem exe p
 
+let assemble (p:prog) : exec =  
+  let text_length = text_len p 0 in
+    let data_pos = Int64.add (mem_bot) (Int64.of_int(Int.mul text_length 8)) in
+      let exe : exec =  
+        {entry = Int64.add mem_bot 8L;
+          text_pos = mem_bot; 
+          data_pos = data_pos; 
+          text_seg = []; 
+          data_seg = [];
+        }
+        in exe
 (* Convert an object file into an executable machine state. 
     - allocate the mem array
     - set up the memory state by writing the symbolic bytes to the 
@@ -496,4 +499,17 @@ let assemble (p:prog) : exec =
   Hint: The Array.make, Array.blit, and Array.of_list library functions 
   may be of use.
 *)
-let load {entry; text_pos; data_pos; text_seg; data_seg} : mach = ()
+let load {entry; text_pos; data_pos; text_seg; data_seg} : mach = 
+  let regs = Array.make 17 0L
+    in let mem = (Array.make mem_size (Byte '\x00'))
+      in let writetxt = Array.blit (Array.of_list text_seg) 0 mem (Option.get (map_addr(text_pos))) (List.length text_seg) 
+        in let write_data = Array.blit (Array.of_list data_seg) 0 mem (Option.get (map_addr(data_pos))) (List.length data_seg)
+      in let m:mach = { 
+      flags = {fo = false; fs = false; fz = false};
+      regs = regs;
+      mem = mem
+    } 
+    in let update_stack =  copier(sbytes_of_int64 exit_addr) (Option.get(map_addr(Int64.sub mem_top 8L))) m
+    in let update_rip = (m.regs.(rind Rip) <- Int64.add mem_bot 8L) 
+      in let update_rsp = (m.regs.(rind Rsp) <- Int64.sub mem_top 8L)
+            in m

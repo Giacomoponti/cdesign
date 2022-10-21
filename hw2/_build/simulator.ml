@@ -377,10 +377,10 @@ let step (m:mach) : unit =
     | InsB0 (opcode, [src; dest]) -> 
         begin match opcode with 
         | Movq -> movq [src; dest] m
-        | Addq -> let move_src = movq [src; Reg Rdi] m in
-                    let move_dst = movq [dest; Reg Rsi] m in 
-                      let addition = addq (Reg Rdi) (Reg Rsi) m in 
-                        movq [Reg Rsi; dest] m 
+        | Addq -> let move_src = movq [src; Reg R08] m in
+                    let move_dst = movq [dest; Reg R09] m in 
+                      let addition = addq (Reg R08) (Reg R09) m in 
+                        movq [Reg R09; dest] m 
 
         | Subq -> subq [src; dest] m 
         | Andq -> let move_src = movq [src; Reg Rdi] m in
@@ -475,24 +475,65 @@ let rec text_len (p:prog) (i:int)  : int =
             end
 end
 
-let rec label_list (p:prog) (addr:quad) (lbl_addr_list: (string*quad) list) = 
+
+
+let rec label_list (p:prog) (addr:quad) (lbl_addr: (string*quad) array) (i:int) : ((string*quad) array) = 
   begin match p with
-  | [] -> lbl_addr_list
+  | [] -> lbl_addr
   | x::xs -> begin match x.asm with 
-            | Text ins_list -> label_list xs (Int64.add (addr) (Int64.of_int(Int.mul (List.length ins_list) 8))) (lbl_addr_list::(x.lbl,addr))
-            | Data data_list -> label_list xs  (Int64.add (addr) (Int64.of_int(Int.mul (List.length ins_list) 8))) (lbl_addr_list::(x.lbl,addr))
+            | Text ins_list -> let u = Array.set lbl_addr i (x.lbl, addr) in 
+                                let new_addr = (Int64.add (addr) (Int64.mul (Int64.of_int (List.length ins_list)) 8L)) in 
+                                  (*let print = print_string (" " ^ (Int64.to_string new_addr)^ " ") in*) 
+                                    label_list xs (new_addr) (lbl_addr) (i+1)
+            | Data data_list -> let u = Array.set lbl_addr i (x.lbl, addr) in 
+                                  let new_addr = (Int64.add (addr) (Int64.of_int(Int.mul (List.length data_list) 8))) in 
+                                   (*let print = Printf.printf "%s" (Int64.to_string new_addr) in *)
+                                    label_list xs (new_addr) (lbl_addr) (i+1)
             end
   end
+
+let resolve_lbl (lbl_addr:(string*quad) array) (ins:ins) : sbyte list = 
+  begin match ins with 
+  | (x, [Imm Lbl lbl; y]) -> let addr = snd (Option.get (Array.find_opt (fun (x, z) -> String.equal x lbl) (lbl_addr))) in
+                          sbytes_of_ins (x, [Imm (Lit addr); y])
+  | (x, [Ind1 (Lbl lbl); y]) -> let addr = snd (Option.get (Array.find_opt (fun (x, z) -> String.equal x lbl) (lbl_addr))) in
+                            sbytes_of_ins (x, [Ind1 (Lit addr); y])
+  | (x, [Ind3 (Lbl lbl, z); y]) -> let addr = snd (Option.get (Array.find_opt (fun (x, z) -> String.equal x lbl) (lbl_addr))) in
+                                sbytes_of_ins(x, [Ind3 (Lit addr, z); y])
+  | (x, y) -> sbytes_of_ins (x, y) 
+end
+
+let rec create_txt_seg (p:prog) (lbl_addr:(string*quad) array) (text_seg : sbyte list ) : sbyte list = 
+  match p with 
+  | [] -> text_seg
+  | x::xs -> match x.asm with 
+            | Text ins_list -> let n = List.length ins_list in
+                              let txt = [] in
+                                begin
+                                    print_string@@Int64.to_string@@int64_of_sbytes(resolve_lbl lbl_addr (List.nth ins_list 0));
+
+
+                                create_txt_seg xs lbl_addr (text_seg);
+                                end 
+            | Data data_list -> create_txt_seg xs lbl_addr text_seg  
+            
+
 
 let assemble (p:prog) : exec =  
   let text_length = text_len p 0 in
     let data_pos = Int64.add (mem_bot) (Int64.of_int(Int.mul text_length 8)) in
-      let lbl_address = label_list p mem_bot [] in
+      (*let print = print_string (" " ^ (Int64.to_string data_pos)^ " ") in*) 
+       let lbl_address = Array.make (List.length p) ("empty", 0L) in 
+        let lbl_list = label_list p mem_bot lbl_address 0 in
+        (*let print = Array.iter (fun (x, y) -> Printf.printf "(%s,%d)" x (Int64.to_int y)) lbl_address in *)
+          (*let print = Printf.printf "passed" in *)
+            let text_seg = create_txt_seg p lbl_list [] in 
+              let print = print_int (List.length text_seg) in
       let exe : exec =  
         {entry = Int64.add mem_bot 8L;
           text_pos = mem_bot; 
           data_pos = data_pos; 
-          text_seg = []; 
+          text_seg = text_seg; 
           data_seg = [];
         }
         in exe

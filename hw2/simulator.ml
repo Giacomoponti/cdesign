@@ -464,20 +464,30 @@ exception Redefined_sym of lbl
  *)
 
 
-let rec text_len (p:prog) (i:int) : int = 
+let rec text_len (p:prog) (i:int)  : int = 
   begin match p with 
   | [] -> i
-  | x::xs -> begin match x.asm with 
+  | x::xs -> begin 
+            match x.asm with 
             | Text ins_list -> text_len xs (i + List.length ins_list)
             | _ -> text_len xs i
+            
             end
 end
 
-
+let rec label_list (p:prog) (addr:quad) (lbl_addr_list: (string*quad) list) = 
+  begin match p with
+  | [] -> lbl_addr_list
+  | x::xs -> begin match x.asm with 
+            | Text ins_list -> label_list xs (Int64.add (addr) (Int64.of_int(Int.mul (List.length ins_list) 8))) (lbl_addr_list::(x.lbl,addr))
+            | Data data_list -> label_list xs  (Int64.add (addr) (Int64.of_int(Int.mul (List.length ins_list) 8))) (lbl_addr_list::(x.lbl,addr))
+            end
+  end
 
 let assemble (p:prog) : exec =  
   let text_length = text_len p 0 in
     let data_pos = Int64.add (mem_bot) (Int64.of_int(Int.mul text_length 8)) in
+      let lbl_address = label_list p mem_bot [] in
       let exe : exec =  
         {entry = Int64.add mem_bot 8L;
           text_pos = mem_bot; 

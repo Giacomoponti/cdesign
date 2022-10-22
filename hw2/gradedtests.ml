@@ -221,7 +221,8 @@ let functionality_tests = [
 
 let mov_mr = test_machine
   [InsB0 (Movq, [~$42; ~%Rax]);InsFrag;InsFrag;InsFrag;InsFrag;InsFrag;InsFrag;InsFrag
-  ;InsB0 (Movq, [~%Rax; stack_offset (-8L)]);InsFrag;InsFrag;InsFrag;InsFrag;InsFrag;InsFrag;InsFrag]
+  ;InsB0 (Movq, [~%Rax; stack_offset (-8L)]);InsFrag;InsFrag;InsFrag;InsFrag;InsFrag;InsFrag;InsFrag
+  ]
 
 let subq = test_machine
     [InsB0 (Subq, [~$1; ~%Rax]);InsFrag;InsFrag;InsFrag;InsFrag;InsFrag;InsFrag;InsFrag
@@ -492,7 +493,8 @@ let medium_tests : suite = [
 ]
 
 let hard_tests : suite = [
-  GradedTest ("End-to-end Factorial", 10, [
+  GradedTest ("End-to-end Factorial", 10, [ 
+    ("fact6", program_test (factorial_iter 6) 720L);
     ("fact6", program_test (factorial_rec 6) 720L);
   ]);
   GradedTest ("Hidden End-to-end Hard", 20, [ ])

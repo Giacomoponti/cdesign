@@ -169,33 +169,50 @@ let map_addr (addr:quad) : int option =
 let immer (x:imm) : quad =
   begin match x with 
     |Lit quad -> quad
-    |_ -> invalid_arg "lbl"
+    |_ -> invalid_arg "unresolved Label"
   end
 
-let decosrc (o:operand) (m:mach) : int64 =
-  begin match o with
-    |Imm x -> immer x
-    |Reg x -> m.regs.(rind x)
-    |Ind1 x -> int64_of_sbytes ((m.mem.(Option.get (map_addr(immer x))))::[])
-    |Ind2 x -> int64_of_sbytes ((m.mem.(Option.get (map_addr((m.regs.(rind x))))))::[])
-    |Ind3 (x, y) -> int64_of_sbytes ((m.mem.(Int64.to_int (immer x) + (Option.get (map_addr((m.regs.(rind y)))))))::[])
-  end
+let get_ind_addr (o:operand) (m:mach) : int64 =
+  match o with 
+  | Ind1 i -> immer i
+  | Ind2 i -> m.regs.(rind i)
+  | Ind3 (i, r) -> Int64.add m.regs.(rind r) i
+  | _ -> invalid_arg "not indirect" 
 
-let decodst (o:operand) (m:mach) : sbyte =
-  begin match o with
-   |Imm y -> invalid_arg "Destination cannot be Immediate"
-   |Reg y -> List.hd@@sbytes_of_int64 (m.regs.(rind y))
-   |Ind1 y -> m.mem.(Option.get (map_addr(immer y)))
-   |Ind2 y -> m.mem.(Option.get (map_addr(m.regs.(rind y))))
-   |Ind3 (y, z) -> m.mem.(Int64.to_int (immer y) + (Option.get (map_addr((m.regs.(rind z))))))
-  end
-  (*begin match o with
-   |Imm y -> invalid_arg "no immediate destination"
-   |Reg y -> List.hd (sbytes_of_int64 m.regs.(rind y))
-   |Ind1 y -> m.mem.(Option.get (map_addr(immer y)))
-   |Ind2 y -> m.mem.(Option.get (map_addr(m.regs.(rind y))))
-   |Ind3 (y, z) -> m.mem.(Int64.to_int (immer y) + (Option.get (map_addr((m.regs.(rind z))))))
-  end*)
+let check_none (i: int64 option) : (int64) = 
+  match i with Some x -> x | None -> raise X86lite_segfault 
+
+
+let help (i: int64) (data: int64)(m:mach) : unit =
+  let addr_opt = map_addr in 
+  let addr = check_none addr_opt in
+  let sbyte_list = sbytes_of_int64 data in
+    (m.mem.(addr) <- List.nth sbl 0;
+    m.mem.(addr + 1) <- List.nth sbl 1;
+    m.mem.(addr + 2) <- List.nth sbl 2;
+    m.mem.(addr + 3) <- List.nth sbl 3;
+    m.mem.(addr + 4) <- List.nth sbl 4;
+    m.mem.(addr + 5) <- List.nth sbl 5;
+    m.mem.(addr + 6) <- List.nth sbl 6;
+    m.mem.(addr + 7) <- List.nth sbl 7)
+
+
+let store_data (o:operand) (data:int64) (m:mach) : unit = 
+  match o with 
+  | Reg r -> m.regs.(rind r) <- data 
+  | Ind y | Ind2 y | Ind3 y -> 
+    help (get_ind_addr) (data) m 
+  | Imm _ -> invalid_arg "Can't use immediate"
+
+let get_data (l: int64) (m:mach) : int64 = 
+  let addr_opt = map_address i in
+    let addr = check_none addr_opt in 
+    int64_of_sbytes
+    [ m.mem.(addr + 0); m.mem.(addr + 1); m.mem.(addr + 2);
+      m.mem.(addr + 3); m.mem.(addr + 4); m.mem.(addr + 5);
+      m.mem.(addr + 6); m.mem.(addr + 7) ]
+    in ret
+
 
 let sign (n:quad) : (int) =  
     Int64.compare n 0L
@@ -270,10 +287,7 @@ let incq (l:operand) (m:mach) : unit =
     | Ind3 (y, z) -> (m.mem.(Int64.to_int (immer y) + (Option.get (map_addr((m.regs.(rind z)))))) <- List.hd@@sbytes_of_int64 (Int64.add (decosrc (Ind3 (y, z)) m) 1L))
   end
 
-  let rec copier (b: sbyte list) (addr: int)(m:mach) : unit =
-    match b with
-      |x::[]-> m.mem.(addr) <- x  
-      |h::tl-> m.mem.(addr) <- h; copier tl (addr+1) m
+
 
   let subq (l:operand list) (m:mach) : unit =
     match l with
@@ -407,8 +421,10 @@ let updater (m:mach) : unit =
   | _ -> m.regs.(rind Rip) <- Int64.add (m.regs.(rind Rip)) 8L
 
 let step (m:mach) : unit = 
-  let content = (m.mem.(Option.get (map_addr(m.regs.(rind Rip))))) in
-    begin 
+  let ins_addr = m.regs.(rind Rip) in
+    let addr_opt = map_addr ins in 
+      let addr = check_none addr_opt in 
+        let ins = 
     begin match content with
     | InsB0 (opcode, [src; dest]) -> 
         begin match opcode with 

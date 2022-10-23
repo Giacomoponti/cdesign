@@ -1,26 +1,351 @@
 ### Starting build.
 # Target: main.ml.depends, tags: { package(num), extension:ml, file:main.ml, ocaml, ocamldep, quiet, traverse }
-ocamlfind ocamldep -package num -modules main.ml > main.ml.depends # cached
+ocamlfind ocamldep -package num -modules main.ml > main.ml.depends
 # Target: util/assert.mli.depends, tags: { extension:mli, file:util/assert.mli, ocaml, ocamldep, quiet, traverse }
-ocamlfind ocamldep -modules util/assert.mli > util/assert.mli.depends # cached
-# Target: util/assert.cmi, tags: { byte, compile, extension:mli, file:util/assert.mli, interf, ocaml, quiet, traverse }
-ocamlfind ocamlc -c -I util -I x86 -o util/assert.cmi util/assert.mli # cached
+ocamlfind ocamldep -modules util/assert.mli > util/assert.mli.depends
 # Target: gradedtests.ml.depends, tags: { package(num), extension:ml, file:gradedtests.ml, ocaml, ocamldep, quiet, traverse }
-ocamlfind ocamldep -package num -modules gradedtests.ml > gradedtests.ml.depends # cached
+ocamlfind ocamldep -package num -modules gradedtests.ml > gradedtests.ml.depends
+# Target: util/assert.cmi, tags: { byte, compile, extension:mli, file:util/assert.mli, interf, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -I util -I x86 -o util/assert.cmi util/assert.mli
 # Target: simulator.ml.depends, tags: { package(num), extension:ml, file:simulator.ml, ocaml, ocamldep, quiet, traverse }
 ocamlfind ocamldep -package num -modules simulator.ml > simulator.ml.depends
-# Target: int64_overflow.mli.depends, tags: { extension:mli, file:int64_overflow.mli, ocaml, ocamldep, quiet, traverse }
-ocamlfind ocamldep -modules int64_overflow.mli > int64_overflow.mli.depends
 # Target: x86/x86.ml.depends, tags: { extension:ml, file:x86/x86.ml, ocaml, ocamldep, quiet, traverse }
-ocamlfind ocamldep -modules x86/x86.ml > x86/x86.ml.depends # cached
+ocamlfind ocamldep -modules x86/x86.ml > x86/x86.ml.depends
 # Target: x86/x86.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:x86/x86.cmo, file:x86/x86.ml, implem, ocaml, quiet, traverse }
-ocamlfind ocamlc -c -I x86 -I util -o x86/x86.cmo x86/x86.ml # cached
-# Target: int64_overflow.cmi, tags: { byte, compile, extension:mli, file:int64_overflow.mli, interf, ocaml, quiet, traverse }
-ocamlfind ocamlc -c -I util -I x86 -o int64_overflow.cmi int64_overflow.mli
+ocamlfind ocamlc -c -I x86 -I util -o x86/x86.cmo x86/x86.ml
 # Target: simulator.cmo, tags: { package(num), byte, compile, extension:cmo, extension:ml, file:simulator.cmo, file:simulator.ml, implem, ocaml, quiet, traverse }
 ocamlfind ocamlc -c -package num -I util -I x86 -o simulator.cmo simulator.ml
++ ocamlfind ocamlc -c -package num -I util -I x86 -o simulator.cmo simulator.ml
+File "simulator.ml", lines 228-234, characters 2-5:
+228 | ..begin match l with
+229 |     |[x; Imm y] -> invalid_arg "Immediate cannot be a location"
+230 |     |[x; Reg y] -> (m.regs.(rind y) <- decosrc x m)
+231 |     |[x; Ind1 y] -> (m.mem.(Option.get (map_addr(immer y))) <- List.hd@@sbytes_of_int64 (decosrc x m))
+232 |     |[x; Ind2 y] -> (m.mem.(Option.get (map_addr((m.regs.(rind y))))) <- List.hd@@sbytes_of_int64 (decosrc x m))
+233 |     |[x; Ind3 (y, z)] -> (m.mem.(Option.get@@map_addr (Int64.add (immer y) (m.regs.(rind z)))) <- List.hd@@sbytes_of_int64(decosrc x m))
+234 |   end
+Warning 8 [partial-match]: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+_::Imm _::_::_
+File "simulator.ml", lines 274-276, characters 4-54:
+274 | ....match b with
+275 |       |x::[]-> m.mem.(addr) <- x  
+276 |       |h::tl-> m.mem.(addr) <- h; copier tl (addr+1) m
+Warning 8 [partial-match]: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+[]
+File "simulator.ml", lines 279-324, characters 4-35:
+279 | ....match l with
+280 |       |[x; Reg y] -> let src_value = decosrc x m in 
+281 |                       let dst_value = m.regs.(rind y) in 
+282 |                         let res = Int64.sub dst_value src_value in  
+283 |                           begin 
+...
+321 |                                   else m.flags.fz <- false;
+322 |                                   if (sign res = -1) then m.flags.fs <- true
+323 |                                   else m.flags.fs <- false; 
+324 |                                 end
+Warning 8 [partial-match]: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+_::Reg _::_::_
+File "simulator.ml", lines 355-362, characters 17-9:
+355 | .................(Reg y) (m:mach) : unit = 
+356 |   let value = Int64.logand (m.regs.(rind x)) (m.regs.(rind y)) in 
+357 |     let update = m.regs.(rind y) <- value  in
+358 |       begin 
+359 |         m.flags.fo <- false;
+360 |         if (sign value = 0) then m.flags.fz <- true else m.flags.fz <- false;
+361 |         if (sign value = -1) then m.flags.fs <- true else m.flags.fs <- false
+362 |       end
+Warning 8 [partial-match]: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+(Imm _|Ind1 _|Ind2 _|Ind3 (_, _))
+File "simulator.ml", lines 355-362, characters 9-9:
+355 | .........(Reg x) (Reg y) (m:mach) : unit = 
+356 |   let value = Int64.logand (m.regs.(rind x)) (m.regs.(rind y)) in 
+357 |     let update = m.regs.(rind y) <- value  in
+358 |       begin 
+359 |         m.flags.fo <- false;
+360 |         if (sign value = 0) then m.flags.fz <- true else m.flags.fz <- false;
+361 |         if (sign value = -1) then m.flags.fs <- true else m.flags.fs <- false
+362 |       end
+Warning 8 [partial-match]: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+(Imm _|Ind1 _|Ind2 _|Ind3 (_, _))
+File "simulator.ml", lines 363-370, characters 16-9:
+363 | ................(Reg y) (m:mach) : unit = 
+364 |   let value = Int64.logor (m.regs.(rind x)) (m.regs.(rind y)) in 
+365 |     let update = m.regs.(rind y) <- value  in
+366 |       begin 
+367 |         m.flags.fo <- false;
+368 |         if (sign value = 0) then m.flags.fz <- true else m.flags.fz <- false;
+369 |         if (sign value = -1) then m.flags.fs <- true else m.flags.fs <- false
+370 |       end
+Warning 8 [partial-match]: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+(Imm _|Ind1 _|Ind2 _|Ind3 (_, _))
+File "simulator.ml", lines 363-370, characters 8-9:
+363 | ........(Reg x) (Reg y) (m:mach) : unit = 
+364 |   let value = Int64.logor (m.regs.(rind x)) (m.regs.(rind y)) in 
+365 |     let update = m.regs.(rind y) <- value  in
+366 |       begin 
+367 |         m.flags.fo <- false;
+368 |         if (sign value = 0) then m.flags.fz <- true else m.flags.fz <- false;
+369 |         if (sign value = -1) then m.flags.fs <- true else m.flags.fs <- false
+370 |       end
+Warning 8 [partial-match]: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+(Imm _|Ind1 _|Ind2 _|Ind3 (_, _))
+File "simulator.ml", lines 372-379, characters 18-7:
+372 | ..................(Reg y) (m:mach) : unit = 
+373 |   let value = Int64.mul (m.regs.(rind x)) (m.regs.(rind y)) in
+374 |     begin 
+375 |       if ((sign (m.regs.(rind x)) <> sign ((m.regs.(rind y))) && sign(value) = 1) || (sign (m.regs.(rind x)) == sign ((m.regs.(rind y))) && sign(value) = -1)) 
+376 |         then m.flags.fo <- true 
+377 |       else m.flags.fo <- false; 
+378 |       m.regs.(rind y) <- value;
+379 |     end..
+Warning 8 [partial-match]: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+(Imm _|Ind1 _|Ind2 _|Ind3 (_, _))
+File "simulator.ml", lines 372-379, characters 10-7:
+372 | ..........(Reg x) (Reg y) (m:mach) : unit = 
+373 |   let value = Int64.mul (m.regs.(rind x)) (m.regs.(rind y)) in
+374 |     begin 
+375 |       if ((sign (m.regs.(rind x)) <> sign ((m.regs.(rind y))) && sign(value) = 1) || (sign (m.regs.(rind x)) == sign ((m.regs.(rind y))) && sign(value) = -1)) 
+376 |         then m.flags.fo <- true 
+377 |       else m.flags.fo <- false; 
+378 |       m.regs.(rind y) <- value;
+379 |     end..
+Warning 8 [partial-match]: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+(Imm _|Ind1 _|Ind2 _|Ind3 (_, _))
+File "simulator.ml", lines 381-382, characters 17-86:
+381 | .................(Reg y) (m:mach) : unit =
+382 |   m.regs.(rind y) <- Int64.shift_left (m.regs.(rind y)) (Int64.to_int m.regs.(rind x))..
+Warning 8 [partial-match]: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+(Imm _|Ind1 _|Ind2 _|Ind3 (_, _))
+File "simulator.ml", lines 381-382, characters 9-86:
+381 | .........(Reg x) (Reg y) (m:mach) : unit =
+382 |   m.regs.(rind y) <- Int64.shift_left (m.regs.(rind y)) (Int64.to_int m.regs.(rind x))..
+Warning 8 [partial-match]: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+(Imm _|Ind1 _|Ind2 _|Ind3 (_, _))
+File "simulator.ml", lines 384-403, characters 17-9:
+384 | .................(Reg y) (m:mach) =
+385 |   let src_value = m.regs.(rind x) in
+386 |     let dst_value = m.regs.(rind y) in
+387 |       let neg = negq (Reg x) m in 
+388 |         let neg_src = m.regs.(rind x) in 
+...
+400 |         Printf.printf "%s" (Bool.to_string m.flags.fo);
+401 |         Printf.printf "%s" (Bool.to_string m.flags.fs);
+402 |         Printf.printf "%s\n" (Bool.to_string m.flags.fz);*)
+403 |       end
+Warning 8 [partial-match]: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+(Imm _|Ind1 _|Ind2 _|Ind3 (_, _))
+File "simulator.ml", lines 384-403, characters 9-9:
+384 | .........(Reg x) (Reg y) (m:mach) =
+385 |   let src_value = m.regs.(rind x) in
+386 |     let dst_value = m.regs.(rind y) in
+387 |       let neg = negq (Reg x) m in 
+388 |         let neg_src = m.regs.(rind x) in 
+...
+400 |         Printf.printf "%s" (Bool.to_string m.flags.fo);
+401 |         Printf.printf "%s" (Bool.to_string m.flags.fs);
+402 |         Printf.printf "%s\n" (Bool.to_string m.flags.fz);*)
+403 |       end
+Warning 8 [partial-match]: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+(Imm _|Ind1 _|Ind2 _|Ind3 (_, _))
+File "simulator.ml", line 209, characters 29-35:
+209 |                         	let assign = m.regs.(rind y) <- (res) in 
+                                   ^^^^^^
+Warning 26 [unused-var]: unused variable assign.
+File "simulator.ml", line 241, characters 8-13:
+241 |     let check =  if (Int64.equal (decosrc l m) (Int64.min_int)) then m.flags.fo <- true 
+              ^^^^^
+Warning 26 [unused-var]: unused variable check.
+File "simulator.ml", line 243, characters 8-11:
+243 |     let mov = movq [l; Reg R08] m in 
+              ^^^
+Warning 26 [unused-var]: unused variable mov.
+File "simulator.ml", line 244, characters 8-11:
+244 |     let not = notq (Reg R08) m in
+              ^^^
+Warning 26 [unused-var]: unused variable not.
+File "simulator.ml", line 246, characters 10-13:
+246 |       let mat = 
+                ^^^
+Warning 26 [unused-var]: unused variable mat.
+File "simulator.ml", line 339, characters 6-12:
+339 |   let update = m.regs.(rind Rsp) <- (Int64.sub m.regs.(rind Rsp) 8L) in 
+            ^^^^^^
+Warning 26 [unused-var]: unused variable update.
+File "simulator.ml", line 345, characters 19-23:
+345 |     | Reg y -> let move = m.regs.(rind y) <- int64_of_sbytes ((m.mem.(Option.get (map_addr(m.regs.(rind Rsp)))))::[]) 
+                         ^^^^
+Warning 26 [unused-var]: unused variable move.
+File "simulator.ml", line 347, characters 20-24:
+347 |     | Ind1 y -> let move = m.mem.(Option.get (map_addr(immer y))) <- (m.mem.(Option.get (map_addr m.regs.(rind Rsp)))) 
+                          ^^^^
+Warning 26 [unused-var]: unused variable move.
+File "simulator.ml", line 349, characters 20-24:
+349 |     | Ind2 y -> let move = (m.mem.(Option.get (map_addr((m.regs.(rind y))))) <- (m.mem.(Option.get (map_addr(m.regs.(rind Rsp)))))) 
+                          ^^^^
+Warning 26 [unused-var]: unused variable move.
+File "simulator.ml", line 351, characters 25-29:
+351 |     | Ind3 (y, z) -> let move = m.mem.(Int64.to_int (immer y) + (Option.get (map_addr(m.regs.(rind z))))) <- (m.mem.(Option.get (map_addr(m.regs.(rind Rsp))))) 
+                               ^^^^
+Warning 26 [unused-var]: unused variable move.
+File "simulator.ml", line 357, characters 8-14:
+357 |     let update = m.regs.(rind y) <- value  in
+              ^^^^^^
+Warning 26 [unused-var]: unused variable update.
+File "simulator.ml", line 365, characters 8-14:
+365 |     let update = m.regs.(rind y) <- value  in
+              ^^^^^^
+Warning 26 [unused-var]: unused variable update.
+File "simulator.ml", line 387, characters 10-13:
+387 |       let neg = negq (Reg x) m in 
+                ^^^
+Warning 26 [unused-var]: unused variable neg.
+File "simulator.ml", line 418, characters 22-30:
+418 |         | Addq -> let move_src = movq [src; Reg R08] m in
+                            ^^^^^^^^
+Warning 26 [unused-var]: unused variable move_src.
+File "simulator.ml", line 419, characters 24-32:
+419 |                     let move_dst = movq [dest; Reg R09] m in 
+                              ^^^^^^^^
+Warning 26 [unused-var]: unused variable move_dst.
+File "simulator.ml", line 420, characters 26-34:
+420 |                       let addition = addq (Reg R08) (Reg R09) m in 
+                                ^^^^^^^^
+Warning 26 [unused-var]: unused variable addition.
+File "simulator.ml", line 428, characters 22-30:
+428 |         | Andq -> let move_src = movq [src; Reg R08] m in
+                            ^^^^^^^^
+Warning 26 [unused-var]: unused variable move_src.
+File "simulator.ml", line 429, characters 24-32:
+429 |                     let move_dst = movq [dest; Reg R09] m in 
+                              ^^^^^^^^
+Warning 26 [unused-var]: unused variable move_dst.
+File "simulator.ml", line 430, characters 26-33:
+430 |                       let log_and = andq (Reg R08) (Reg R09) m in 
+                                ^^^^^^^
+Warning 26 [unused-var]: unused variable log_and.
+File "simulator.ml", line 434, characters 23-31:
+434 |         | Imulq -> let move_src = movq [src; Reg R08] m in
+                             ^^^^^^^^
+Warning 26 [unused-var]: unused variable move_src.
+File "simulator.ml", line 435, characters 24-32:
+435 |                     let move_dst = movq [dest; Reg R09] m in 
+                              ^^^^^^^^
+Warning 26 [unused-var]: unused variable move_dst.
+File "simulator.ml", line 436, characters 26-30:
+436 |                       let mult = imulq (Reg R08) (Reg R09) m in 
+                                ^^^^
+Warning 26 [unused-var]: unused variable mult.
+File "simulator.ml", line 440, characters 21-29:
+440 |         | Orq -> let move_src = movq [src; Reg R08] m in
+                           ^^^^^^^^
+Warning 26 [unused-var]: unused variable move_src.
+File "simulator.ml", line 441, characters 22-30:
+441 |                   let move_dst = movq [dest; Reg R09] m in 
+                            ^^^^^^^^
+Warning 26 [unused-var]: unused variable move_dst.
+File "simulator.ml", line 442, characters 24-30:
+442 |                     let log_or = orq (Reg R08) (Reg R09) m in 
+                              ^^^^^^
+Warning 26 [unused-var]: unused variable log_or.
+File "simulator.ml", line 447, characters 35-43:
+447 |                     | Imm x -> let move_src = movq [src; Reg R08] m in
+                                         ^^^^^^^^
+Warning 26 [unused-var]: unused variable move_src.
+File "simulator.ml", line 448, characters 36-44:
+448 |                                 let move_dst = movq [dest; Reg R09] m in 
+                                          ^^^^^^^^
+Warning 26 [unused-var]: unused variable move_dst.
+File "simulator.ml", line 449, characters 38-44:
+449 |                                   let log_or = shlq (Reg R08) (Reg R09) m in 
+                                            ^^^^^^
+Warning 26 [unused-var]: unused variable log_or.
+File "simulator.ml", line 453, characters 37-45:
+453 |                     | Reg Rcx -> let move_src = movq [src; Reg R08] m in
+                                           ^^^^^^^^
+Warning 26 [unused-var]: unused variable move_src.
+File "simulator.ml", line 454, characters 38-46:
+454 |                                   let move_dst = movq [dest; Reg R09] m in 
+                                            ^^^^^^^^
+Warning 26 [unused-var]: unused variable move_dst.
+File "simulator.ml", line 455, characters 40-46:
+455 |                                     let log_or = shlq (Reg R08) (Reg R09) m in 
+                                              ^^^^^^
+Warning 26 [unused-var]: unused variable log_or.
+File "simulator.ml", line 461, characters 22-30:
+461 |         | Cmpq -> let move_src = movq [src; Reg R08] m in
+                            ^^^^^^^^
+Warning 26 [unused-var]: unused variable move_src.
+File "simulator.ml", line 462, characters 16-24:
+462 |             let move_dst = movq [dest; Reg R09] m in 
+                      ^^^^^^^^
+Warning 26 [unused-var]: unused variable move_dst.
+File "simulator.ml", line 485, characters 19-23:
+485 |       | Jmp -> let move = movq [src; Reg R14] m in 
+                         ^^^^
+Warning 26 [unused-var]: unused variable move.
+File "simulator.ml", line 489, characters 21-25:
+489 |       | Callq -> let move = movq [src; Reg R14] m in 
+                           ^^^^
+Warning 26 [unused-var]: unused variable move.
+File "simulator.ml", line 490, characters 22-26:
+490 |                   let push = pushq (Reg Rip) in 
+                            ^^^^
+Warning 26 [unused-var]: unused variable push.
+File "simulator.ml", line 570, characters 36-37:
+570 |                                 let u = Array.set lbl_addr i (x.lbl, addr) in 
+                                          ^
+Warning 26 [unused-var]: unused variable u.
+File "simulator.ml", line 574, characters 36-37:
+574 |             | Data data_list -> let u = Array.set lbl_addr i (x.lbl, addr) in 
+                                          ^
+Warning 26 [unused-var]: unused variable u.
+File "simulator.ml", line 640, characters 12-17:
+640 |         let print = Array.iter (fun (x, y) -> Printf.printf "(%s,%d)" x (Int64.to_int y)) lbl_address in 
+                  ^^^^^
+Warning 26 [unused-var]: unused variable print.
+File "simulator.ml", line 641, characters 14-19:
+641 |           let print = Printf.printf " passed \n" in 
+                    ^^^^^
+Warning 26 [unused-var]: unused variable print.
+File "simulator.ml", line 644, characters 20-30:
+644 |                 let check_main = check_und "main" lbl_address in 
+                          ^^^^^^^^^^
+Warning 26 [unused-var]: unused variable check_main.
+File "simulator.ml", line 670, characters 13-21:
+670 |       in let writetxt = Array.blit (Array.of_list text_seg) 0 mem (Option.get (map_addr(text_pos))) (List.length text_seg) 
+                   ^^^^^^^^
+Warning 26 [unused-var]: unused variable writetxt.
+File "simulator.ml", line 671, characters 15-25:
+671 |         in let write_data = Array.blit (Array.of_list data_seg) 0 mem (Option.get (map_addr(data_pos))) (List.length data_seg)
+                     ^^^^^^^^^^
+Warning 26 [unused-var]: unused variable write_data.
+File "simulator.ml", line 677, characters 11-23:
+677 |     in let update_stack =  copier(sbytes_of_int64 exit_addr) (Option.get(map_addr(Int64.sub mem_top 8L))) m
+                 ^^^^^^^^^^^^
+Warning 26 [unused-var]: unused variable update_stack.
+File "simulator.ml", line 678, characters 11-21:
+678 |     in let update_rip = (m.regs.(rind Rip) <- Int64.add mem_bot 8L) 
+                 ^^^^^^^^^^
+Warning 26 [unused-var]: unused variable update_rip.
+File "simulator.ml", line 679, characters 13-23:
+679 |       in let update_rsp = (m.regs.(rind Rsp) <- Int64.sub mem_top 8L)
+                   ^^^^^^^^^^
+Warning 26 [unused-var]: unused variable update_rsp.
 # Target: studenttests.ml.depends, tags: { package(num), extension:ml, file:studenttests.ml, ocaml, ocamldep, quiet, traverse }
-ocamlfind ocamldep -package num -modules studenttests.ml > studenttests.ml.depends # cached
+ocamlfind ocamldep -package num -modules studenttests.ml > studenttests.ml.depends
 # Target: gradedtests.cmo, tags: { package(num), byte, compile, extension:cmo, extension:ml, file:gradedtests.cmo, file:gradedtests.ml, implem, ocaml, quiet, traverse }
 ocamlfind ocamlc -c -package num -I util -I x86 -o gradedtests.cmo gradedtests.ml
 # Target: studenttests.cmo, tags: { package(num), byte, compile, extension:cmo, extension:ml, file:studenttests.cmo, file:studenttests.ml, implem, ocaml, quiet, traverse }
@@ -28,17 +353,342 @@ ocamlfind ocamlc -c -package num -I util -I x86 -o studenttests.cmo studenttests
 # Target: main.cmo, tags: { package(num), byte, compile, extension:cmo, extension:ml, file:main.cmo, file:main.ml, implem, ocaml, quiet, traverse }
 ocamlfind ocamlc -c -package num -I util -I x86 -o main.cmo main.ml
 # Target: util/assert.ml.depends, tags: { extension:ml, file:util/assert.ml, ocaml, ocamldep, quiet, traverse }
-ocamlfind ocamldep -modules util/assert.ml > util/assert.ml.depends # cached
+ocamlfind ocamldep -modules util/assert.ml > util/assert.ml.depends
 # Target: util/assert.cmx, tags: { compile, extension:cmx, extension:ml, file:util/assert.cmx, file:util/assert.ml, implem, native, ocaml, quiet, traverse }
-ocamlfind ocamlopt -c -I util -I x86 -o util/assert.cmx util/assert.ml # cached
-# Target: int64_overflow.ml.depends, tags: { package(num), extension:ml, file:int64_overflow.ml, ocaml, ocamldep, quiet, traverse }
-ocamlfind ocamldep -package num -modules int64_overflow.ml > int64_overflow.ml.depends
+ocamlfind ocamlopt -c -I util -I x86 -o util/assert.cmx util/assert.ml
 # Target: x86/x86.cmx, tags: { compile, extension:cmx, extension:ml, file:x86/x86.cmx, file:x86/x86.ml, implem, native, ocaml, quiet, traverse }
-ocamlfind ocamlopt -c -I x86 -I util -o x86/x86.cmx x86/x86.ml # cached
-# Target: int64_overflow.cmx, tags: { package(num), compile, extension:cmx, extension:ml, file:int64_overflow.cmx, file:int64_overflow.ml, implem, native, ocaml, quiet, traverse }
-ocamlfind ocamlopt -c -package num -I util -I x86 -o int64_overflow.cmx int64_overflow.ml
+ocamlfind ocamlopt -c -I x86 -I util -o x86/x86.cmx x86/x86.ml
 # Target: simulator.cmx, tags: { package(num), compile, extension:cmx, extension:ml, file:simulator.cmx, file:simulator.ml, implem, native, ocaml, quiet, traverse }
 ocamlfind ocamlopt -c -package num -I util -I x86 -o simulator.cmx simulator.ml
++ ocamlfind ocamlopt -c -package num -I util -I x86 -o simulator.cmx simulator.ml
+File "simulator.ml", lines 228-234, characters 2-5:
+228 | ..begin match l with
+229 |     |[x; Imm y] -> invalid_arg "Immediate cannot be a location"
+230 |     |[x; Reg y] -> (m.regs.(rind y) <- decosrc x m)
+231 |     |[x; Ind1 y] -> (m.mem.(Option.get (map_addr(immer y))) <- List.hd@@sbytes_of_int64 (decosrc x m))
+232 |     |[x; Ind2 y] -> (m.mem.(Option.get (map_addr((m.regs.(rind y))))) <- List.hd@@sbytes_of_int64 (decosrc x m))
+233 |     |[x; Ind3 (y, z)] -> (m.mem.(Option.get@@map_addr (Int64.add (immer y) (m.regs.(rind z)))) <- List.hd@@sbytes_of_int64(decosrc x m))
+234 |   end
+Warning 8 [partial-match]: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+_::Imm _::_::_
+File "simulator.ml", lines 274-276, characters 4-54:
+274 | ....match b with
+275 |       |x::[]-> m.mem.(addr) <- x  
+276 |       |h::tl-> m.mem.(addr) <- h; copier tl (addr+1) m
+Warning 8 [partial-match]: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+[]
+File "simulator.ml", lines 279-324, characters 4-35:
+279 | ....match l with
+280 |       |[x; Reg y] -> let src_value = decosrc x m in 
+281 |                       let dst_value = m.regs.(rind y) in 
+282 |                         let res = Int64.sub dst_value src_value in  
+283 |                           begin 
+...
+321 |                                   else m.flags.fz <- false;
+322 |                                   if (sign res = -1) then m.flags.fs <- true
+323 |                                   else m.flags.fs <- false; 
+324 |                                 end
+Warning 8 [partial-match]: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+_::Reg _::_::_
+File "simulator.ml", lines 355-362, characters 17-9:
+355 | .................(Reg y) (m:mach) : unit = 
+356 |   let value = Int64.logand (m.regs.(rind x)) (m.regs.(rind y)) in 
+357 |     let update = m.regs.(rind y) <- value  in
+358 |       begin 
+359 |         m.flags.fo <- false;
+360 |         if (sign value = 0) then m.flags.fz <- true else m.flags.fz <- false;
+361 |         if (sign value = -1) then m.flags.fs <- true else m.flags.fs <- false
+362 |       end
+Warning 8 [partial-match]: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+(Imm _|Ind1 _|Ind2 _|Ind3 (_, _))
+File "simulator.ml", lines 355-362, characters 9-9:
+355 | .........(Reg x) (Reg y) (m:mach) : unit = 
+356 |   let value = Int64.logand (m.regs.(rind x)) (m.regs.(rind y)) in 
+357 |     let update = m.regs.(rind y) <- value  in
+358 |       begin 
+359 |         m.flags.fo <- false;
+360 |         if (sign value = 0) then m.flags.fz <- true else m.flags.fz <- false;
+361 |         if (sign value = -1) then m.flags.fs <- true else m.flags.fs <- false
+362 |       end
+Warning 8 [partial-match]: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+(Imm _|Ind1 _|Ind2 _|Ind3 (_, _))
+File "simulator.ml", lines 363-370, characters 16-9:
+363 | ................(Reg y) (m:mach) : unit = 
+364 |   let value = Int64.logor (m.regs.(rind x)) (m.regs.(rind y)) in 
+365 |     let update = m.regs.(rind y) <- value  in
+366 |       begin 
+367 |         m.flags.fo <- false;
+368 |         if (sign value = 0) then m.flags.fz <- true else m.flags.fz <- false;
+369 |         if (sign value = -1) then m.flags.fs <- true else m.flags.fs <- false
+370 |       end
+Warning 8 [partial-match]: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+(Imm _|Ind1 _|Ind2 _|Ind3 (_, _))
+File "simulator.ml", lines 363-370, characters 8-9:
+363 | ........(Reg x) (Reg y) (m:mach) : unit = 
+364 |   let value = Int64.logor (m.regs.(rind x)) (m.regs.(rind y)) in 
+365 |     let update = m.regs.(rind y) <- value  in
+366 |       begin 
+367 |         m.flags.fo <- false;
+368 |         if (sign value = 0) then m.flags.fz <- true else m.flags.fz <- false;
+369 |         if (sign value = -1) then m.flags.fs <- true else m.flags.fs <- false
+370 |       end
+Warning 8 [partial-match]: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+(Imm _|Ind1 _|Ind2 _|Ind3 (_, _))
+File "simulator.ml", lines 372-379, characters 18-7:
+372 | ..................(Reg y) (m:mach) : unit = 
+373 |   let value = Int64.mul (m.regs.(rind x)) (m.regs.(rind y)) in
+374 |     begin 
+375 |       if ((sign (m.regs.(rind x)) <> sign ((m.regs.(rind y))) && sign(value) = 1) || (sign (m.regs.(rind x)) == sign ((m.regs.(rind y))) && sign(value) = -1)) 
+376 |         then m.flags.fo <- true 
+377 |       else m.flags.fo <- false; 
+378 |       m.regs.(rind y) <- value;
+379 |     end..
+Warning 8 [partial-match]: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+(Imm _|Ind1 _|Ind2 _|Ind3 (_, _))
+File "simulator.ml", lines 372-379, characters 10-7:
+372 | ..........(Reg x) (Reg y) (m:mach) : unit = 
+373 |   let value = Int64.mul (m.regs.(rind x)) (m.regs.(rind y)) in
+374 |     begin 
+375 |       if ((sign (m.regs.(rind x)) <> sign ((m.regs.(rind y))) && sign(value) = 1) || (sign (m.regs.(rind x)) == sign ((m.regs.(rind y))) && sign(value) = -1)) 
+376 |         then m.flags.fo <- true 
+377 |       else m.flags.fo <- false; 
+378 |       m.regs.(rind y) <- value;
+379 |     end..
+Warning 8 [partial-match]: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+(Imm _|Ind1 _|Ind2 _|Ind3 (_, _))
+File "simulator.ml", lines 381-382, characters 17-86:
+381 | .................(Reg y) (m:mach) : unit =
+382 |   m.regs.(rind y) <- Int64.shift_left (m.regs.(rind y)) (Int64.to_int m.regs.(rind x))..
+Warning 8 [partial-match]: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+(Imm _|Ind1 _|Ind2 _|Ind3 (_, _))
+File "simulator.ml", lines 381-382, characters 9-86:
+381 | .........(Reg x) (Reg y) (m:mach) : unit =
+382 |   m.regs.(rind y) <- Int64.shift_left (m.regs.(rind y)) (Int64.to_int m.regs.(rind x))..
+Warning 8 [partial-match]: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+(Imm _|Ind1 _|Ind2 _|Ind3 (_, _))
+File "simulator.ml", lines 384-403, characters 17-9:
+384 | .................(Reg y) (m:mach) =
+385 |   let src_value = m.regs.(rind x) in
+386 |     let dst_value = m.regs.(rind y) in
+387 |       let neg = negq (Reg x) m in 
+388 |         let neg_src = m.regs.(rind x) in 
+...
+400 |         Printf.printf "%s" (Bool.to_string m.flags.fo);
+401 |         Printf.printf "%s" (Bool.to_string m.flags.fs);
+402 |         Printf.printf "%s\n" (Bool.to_string m.flags.fz);*)
+403 |       end
+Warning 8 [partial-match]: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+(Imm _|Ind1 _|Ind2 _|Ind3 (_, _))
+File "simulator.ml", lines 384-403, characters 9-9:
+384 | .........(Reg x) (Reg y) (m:mach) =
+385 |   let src_value = m.regs.(rind x) in
+386 |     let dst_value = m.regs.(rind y) in
+387 |       let neg = negq (Reg x) m in 
+388 |         let neg_src = m.regs.(rind x) in 
+...
+400 |         Printf.printf "%s" (Bool.to_string m.flags.fo);
+401 |         Printf.printf "%s" (Bool.to_string m.flags.fs);
+402 |         Printf.printf "%s\n" (Bool.to_string m.flags.fz);*)
+403 |       end
+Warning 8 [partial-match]: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+(Imm _|Ind1 _|Ind2 _|Ind3 (_, _))
+File "simulator.ml", line 209, characters 29-35:
+209 |                         	let assign = m.regs.(rind y) <- (res) in 
+                                   ^^^^^^
+Warning 26 [unused-var]: unused variable assign.
+File "simulator.ml", line 241, characters 8-13:
+241 |     let check =  if (Int64.equal (decosrc l m) (Int64.min_int)) then m.flags.fo <- true 
+              ^^^^^
+Warning 26 [unused-var]: unused variable check.
+File "simulator.ml", line 243, characters 8-11:
+243 |     let mov = movq [l; Reg R08] m in 
+              ^^^
+Warning 26 [unused-var]: unused variable mov.
+File "simulator.ml", line 244, characters 8-11:
+244 |     let not = notq (Reg R08) m in
+              ^^^
+Warning 26 [unused-var]: unused variable not.
+File "simulator.ml", line 246, characters 10-13:
+246 |       let mat = 
+                ^^^
+Warning 26 [unused-var]: unused variable mat.
+File "simulator.ml", line 339, characters 6-12:
+339 |   let update = m.regs.(rind Rsp) <- (Int64.sub m.regs.(rind Rsp) 8L) in 
+            ^^^^^^
+Warning 26 [unused-var]: unused variable update.
+File "simulator.ml", line 345, characters 19-23:
+345 |     | Reg y -> let move = m.regs.(rind y) <- int64_of_sbytes ((m.mem.(Option.get (map_addr(m.regs.(rind Rsp)))))::[]) 
+                         ^^^^
+Warning 26 [unused-var]: unused variable move.
+File "simulator.ml", line 347, characters 20-24:
+347 |     | Ind1 y -> let move = m.mem.(Option.get (map_addr(immer y))) <- (m.mem.(Option.get (map_addr m.regs.(rind Rsp)))) 
+                          ^^^^
+Warning 26 [unused-var]: unused variable move.
+File "simulator.ml", line 349, characters 20-24:
+349 |     | Ind2 y -> let move = (m.mem.(Option.get (map_addr((m.regs.(rind y))))) <- (m.mem.(Option.get (map_addr(m.regs.(rind Rsp)))))) 
+                          ^^^^
+Warning 26 [unused-var]: unused variable move.
+File "simulator.ml", line 351, characters 25-29:
+351 |     | Ind3 (y, z) -> let move = m.mem.(Int64.to_int (immer y) + (Option.get (map_addr(m.regs.(rind z))))) <- (m.mem.(Option.get (map_addr(m.regs.(rind Rsp))))) 
+                               ^^^^
+Warning 26 [unused-var]: unused variable move.
+File "simulator.ml", line 357, characters 8-14:
+357 |     let update = m.regs.(rind y) <- value  in
+              ^^^^^^
+Warning 26 [unused-var]: unused variable update.
+File "simulator.ml", line 365, characters 8-14:
+365 |     let update = m.regs.(rind y) <- value  in
+              ^^^^^^
+Warning 26 [unused-var]: unused variable update.
+File "simulator.ml", line 387, characters 10-13:
+387 |       let neg = negq (Reg x) m in 
+                ^^^
+Warning 26 [unused-var]: unused variable neg.
+File "simulator.ml", line 418, characters 22-30:
+418 |         | Addq -> let move_src = movq [src; Reg R08] m in
+                            ^^^^^^^^
+Warning 26 [unused-var]: unused variable move_src.
+File "simulator.ml", line 419, characters 24-32:
+419 |                     let move_dst = movq [dest; Reg R09] m in 
+                              ^^^^^^^^
+Warning 26 [unused-var]: unused variable move_dst.
+File "simulator.ml", line 420, characters 26-34:
+420 |                       let addition = addq (Reg R08) (Reg R09) m in 
+                                ^^^^^^^^
+Warning 26 [unused-var]: unused variable addition.
+File "simulator.ml", line 428, characters 22-30:
+428 |         | Andq -> let move_src = movq [src; Reg R08] m in
+                            ^^^^^^^^
+Warning 26 [unused-var]: unused variable move_src.
+File "simulator.ml", line 429, characters 24-32:
+429 |                     let move_dst = movq [dest; Reg R09] m in 
+                              ^^^^^^^^
+Warning 26 [unused-var]: unused variable move_dst.
+File "simulator.ml", line 430, characters 26-33:
+430 |                       let log_and = andq (Reg R08) (Reg R09) m in 
+                                ^^^^^^^
+Warning 26 [unused-var]: unused variable log_and.
+File "simulator.ml", line 434, characters 23-31:
+434 |         | Imulq -> let move_src = movq [src; Reg R08] m in
+                             ^^^^^^^^
+Warning 26 [unused-var]: unused variable move_src.
+File "simulator.ml", line 435, characters 24-32:
+435 |                     let move_dst = movq [dest; Reg R09] m in 
+                              ^^^^^^^^
+Warning 26 [unused-var]: unused variable move_dst.
+File "simulator.ml", line 436, characters 26-30:
+436 |                       let mult = imulq (Reg R08) (Reg R09) m in 
+                                ^^^^
+Warning 26 [unused-var]: unused variable mult.
+File "simulator.ml", line 440, characters 21-29:
+440 |         | Orq -> let move_src = movq [src; Reg R08] m in
+                           ^^^^^^^^
+Warning 26 [unused-var]: unused variable move_src.
+File "simulator.ml", line 441, characters 22-30:
+441 |                   let move_dst = movq [dest; Reg R09] m in 
+                            ^^^^^^^^
+Warning 26 [unused-var]: unused variable move_dst.
+File "simulator.ml", line 442, characters 24-30:
+442 |                     let log_or = orq (Reg R08) (Reg R09) m in 
+                              ^^^^^^
+Warning 26 [unused-var]: unused variable log_or.
+File "simulator.ml", line 447, characters 35-43:
+447 |                     | Imm x -> let move_src = movq [src; Reg R08] m in
+                                         ^^^^^^^^
+Warning 26 [unused-var]: unused variable move_src.
+File "simulator.ml", line 448, characters 36-44:
+448 |                                 let move_dst = movq [dest; Reg R09] m in 
+                                          ^^^^^^^^
+Warning 26 [unused-var]: unused variable move_dst.
+File "simulator.ml", line 449, characters 38-44:
+449 |                                   let log_or = shlq (Reg R08) (Reg R09) m in 
+                                            ^^^^^^
+Warning 26 [unused-var]: unused variable log_or.
+File "simulator.ml", line 453, characters 37-45:
+453 |                     | Reg Rcx -> let move_src = movq [src; Reg R08] m in
+                                           ^^^^^^^^
+Warning 26 [unused-var]: unused variable move_src.
+File "simulator.ml", line 454, characters 38-46:
+454 |                                   let move_dst = movq [dest; Reg R09] m in 
+                                            ^^^^^^^^
+Warning 26 [unused-var]: unused variable move_dst.
+File "simulator.ml", line 455, characters 40-46:
+455 |                                     let log_or = shlq (Reg R08) (Reg R09) m in 
+                                              ^^^^^^
+Warning 26 [unused-var]: unused variable log_or.
+File "simulator.ml", line 461, characters 22-30:
+461 |         | Cmpq -> let move_src = movq [src; Reg R08] m in
+                            ^^^^^^^^
+Warning 26 [unused-var]: unused variable move_src.
+File "simulator.ml", line 462, characters 16-24:
+462 |             let move_dst = movq [dest; Reg R09] m in 
+                      ^^^^^^^^
+Warning 26 [unused-var]: unused variable move_dst.
+File "simulator.ml", line 485, characters 19-23:
+485 |       | Jmp -> let move = movq [src; Reg R14] m in 
+                         ^^^^
+Warning 26 [unused-var]: unused variable move.
+File "simulator.ml", line 489, characters 21-25:
+489 |       | Callq -> let move = movq [src; Reg R14] m in 
+                           ^^^^
+Warning 26 [unused-var]: unused variable move.
+File "simulator.ml", line 490, characters 22-26:
+490 |                   let push = pushq (Reg Rip) in 
+                            ^^^^
+Warning 26 [unused-var]: unused variable push.
+File "simulator.ml", line 570, characters 36-37:
+570 |                                 let u = Array.set lbl_addr i (x.lbl, addr) in 
+                                          ^
+Warning 26 [unused-var]: unused variable u.
+File "simulator.ml", line 574, characters 36-37:
+574 |             | Data data_list -> let u = Array.set lbl_addr i (x.lbl, addr) in 
+                                          ^
+Warning 26 [unused-var]: unused variable u.
+File "simulator.ml", line 640, characters 12-17:
+640 |         let print = Array.iter (fun (x, y) -> Printf.printf "(%s,%d)" x (Int64.to_int y)) lbl_address in 
+                  ^^^^^
+Warning 26 [unused-var]: unused variable print.
+File "simulator.ml", line 641, characters 14-19:
+641 |           let print = Printf.printf " passed \n" in 
+                    ^^^^^
+Warning 26 [unused-var]: unused variable print.
+File "simulator.ml", line 644, characters 20-30:
+644 |                 let check_main = check_und "main" lbl_address in 
+                          ^^^^^^^^^^
+Warning 26 [unused-var]: unused variable check_main.
+File "simulator.ml", line 670, characters 13-21:
+670 |       in let writetxt = Array.blit (Array.of_list text_seg) 0 mem (Option.get (map_addr(text_pos))) (List.length text_seg) 
+                   ^^^^^^^^
+Warning 26 [unused-var]: unused variable writetxt.
+File "simulator.ml", line 671, characters 15-25:
+671 |         in let write_data = Array.blit (Array.of_list data_seg) 0 mem (Option.get (map_addr(data_pos))) (List.length data_seg)
+                     ^^^^^^^^^^
+Warning 26 [unused-var]: unused variable write_data.
+File "simulator.ml", line 677, characters 11-23:
+677 |     in let update_stack =  copier(sbytes_of_int64 exit_addr) (Option.get(map_addr(Int64.sub mem_top 8L))) m
+                 ^^^^^^^^^^^^
+Warning 26 [unused-var]: unused variable update_stack.
+File "simulator.ml", line 678, characters 11-21:
+678 |     in let update_rip = (m.regs.(rind Rip) <- Int64.add mem_bot 8L) 
+                 ^^^^^^^^^^
+Warning 26 [unused-var]: unused variable update_rip.
+File "simulator.ml", line 679, characters 13-23:
+679 |       in let update_rsp = (m.regs.(rind Rsp) <- Int64.sub mem_top 8L)
+                   ^^^^^^^^^^
+Warning 26 [unused-var]: unused variable update_rsp.
 # Target: gradedtests.cmx, tags: { package(num), compile, extension:cmx, extension:ml, file:gradedtests.cmx, file:gradedtests.ml, implem, native, ocaml, quiet, traverse }
 ocamlfind ocamlopt -c -package num -I util -I x86 -o gradedtests.cmx gradedtests.ml
 # Target: studenttests.cmx, tags: { package(num), compile, extension:cmx, extension:ml, file:studenttests.cmx, file:studenttests.ml, implem, native, ocaml, quiet, traverse }
@@ -46,5 +696,5 @@ ocamlfind ocamlopt -c -package num -I util -I x86 -o studenttests.cmx studenttes
 # Target: main.cmx, tags: { package(num), compile, extension:cmx, extension:ml, file:main.cmx, file:main.ml, implem, native, ocaml, quiet, traverse }
 ocamlfind ocamlopt -c -package num -I util -I x86 -o main.cmx main.ml
 # Target: main.native, tags: { package(num), dont_link_with, extension:native, file:main.native, link, native, ocaml, program, quiet, traverse }
-ocamlfind ocamlopt unix.cmxa str.cmxa -linkpkg -package num -I x86 -I util int64_overflow.cmx x86/x86.cmx simulator.cmx util/assert.cmx gradedtests.cmx studenttests.cmx main.cmx -o main.native
+ocamlfind ocamlopt unix.cmxa str.cmxa -linkpkg -package num -I x86 -I util x86/x86.cmx simulator.cmx util/assert.cmx gradedtests.cmx studenttests.cmx main.cmx -o main.native
 # Compilation successful.

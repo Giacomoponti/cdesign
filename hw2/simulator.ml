@@ -270,15 +270,6 @@ let incq (l:operand) (m:mach) : unit =
     | Ind3 (y, z) -> (m.mem.(Int64.to_int (immer y) + (Option.get (map_addr((m.regs.(rind z)))))) <- List.hd@@sbytes_of_int64 (Int64.add (decosrc (Ind3 (y, z)) m) 1L))
   end
 
-let decq (l:operand) (m:mach) : unit =
-  begin match l with 
-    | Imm y -> invalid_arg "Dest cannot be imm"
-    | Reg y -> (m.regs.(rind y) <- Int64.sub (m.regs.(rind y)) 1L)
-    | Ind1 y -> (m.mem.(Option.get (map_addr(immer y))) <- List.hd@@sbytes_of_int64 (Int64.sub (decosrc (Ind1 y) m) 1L))
-    | Ind2 y -> (m.mem.(Option.get (map_addr((m.regs.(rind y))))) <- List.hd@@sbytes_of_int64 (Int64.sub (decosrc (Ind2 y) m) 1L))
-    | Ind3 (y, z) -> (m.mem.(Int64.to_int (immer y) + (Option.get (map_addr((m.regs.(rind z)))))) <- List.hd@@sbytes_of_int64 (Int64.sub (decosrc (Ind3 (y, z)) m) 1L))
-  end
-
   let rec copier (b: sbyte list) (addr: int)(m:mach) : unit =
     match b with
       |x::[]-> m.mem.(addr) <- x  
@@ -286,11 +277,51 @@ let decq (l:operand) (m:mach) : unit =
 
   let subq (l:operand list) (m:mach) : unit =
     match l with
-      |[x; Reg y] -> m.regs.(rind y) <- Int64.sub (m.regs.(rind y)) (decosrc x m)
-      |[x; Ind1 y] -> copier (sbytes_of_int64(Int64.sub (decosrc (Ind1 y) m) (decosrc x m))) (Option.get (map_addr(immer y))) m
-      |[x; Ind2 y] -> copier (sbytes_of_int64(Int64.sub (decosrc (Ind2 y) m) (decosrc x m))) (Option.get (map_addr((m.regs.(rind y))))) m
-      |[x; Ind3 (y, z)] -> copier (sbytes_of_int64(Int64.sub (decosrc (Ind3 (y, z)) m) (decosrc x m))) (Int64.to_int (immer y) + (Option.get (map_addr((m.regs.(rind z)))))) m
-
+      |[x; Reg y] -> let src_value = decosrc x m in 
+                      let dst_value = m.regs.(rind y) in 
+                        let res = Int64.sub dst_value src_value in  
+                          begin 
+                            m.regs.(rind y) <- res;
+                            if ((((sign (Int64.neg src_value)) <> (sign dst_value)) && ((sign (Int64.neg src_value)) = (sign res))) || (src_value = Int64.min_int)) then m.flags.fo <- true
+                            else m.flags.fo <- false;  
+                            if (sign res = 0) then m.flags.fz <- true
+                            else m.flags.fz <- false;
+                            if (sign res = -1) then m.flags.fs <- true
+                            else m.flags.fs <- false; 
+                          end
+      |[x; Ind1 y] -> let src_value = decosrc x m in 
+                        let dst_value = decosrc (Ind1 y) m in 
+                          let res = Int64.sub dst_value src_value in
+                            begin copier (sbytes_of_int64(res)) (Option.get (map_addr(immer y))) m;
+                              if ((((sign (Int64.neg src_value)) <> (sign dst_value)) && ((sign (Int64.neg src_value)) = (sign res))) || (src_value = Int64.min_int)) then m.flags.fo <- true
+                              else m.flags.fo <- false;  
+                              if (sign res = 0) then m.flags.fz <- true
+                              else m.flags.fz <- false;
+                              if (sign res = -1) then m.flags.fs <- true
+                              else m.flags.fs <- false; 
+                            end
+      |[x; Ind2 y] -> let src_value = decosrc x m in 
+                        let dst_value = decosrc (Ind2 y) m in 
+                          let res = Int64.sub dst_value src_value in
+                            begin copier (sbytes_of_int64(res)) (Option.get (map_addr((m.regs.(rind y))))) m ;
+                              if ((((sign (Int64.neg src_value)) <> (sign dst_value)) && ((sign (Int64.neg src_value)) = (sign res))) || (src_value = Int64.min_int)) then m.flags.fo <- true
+                              else m.flags.fo <- false;  
+                              if (sign res = 0) then m.flags.fz <- true
+                              else m.flags.fz <- false;
+                              if (sign res = -1) then m.flags.fs <- true
+                              else m.flags.fs <- false; 
+                            end
+      |[x; Ind3 (y, z)] -> let src_value = decosrc x m in 
+                            let dst_value = decosrc (Ind3 (y, z)) m in 
+                              let res = Int64.sub dst_value src_value in
+                                begin copier (sbytes_of_int64(res)) (Int64.to_int (immer y) + (Option.get (map_addr((m.regs.(rind z)))))) m;
+                                  if ((((sign (Int64.neg src_value)) <> (sign dst_value)) && ((sign (Int64.neg src_value)) = (sign res))) || (src_value = Int64.min_int)) then m.flags.fo <- true
+                                  else m.flags.fo <- false;  
+                                  if (sign res = 0) then m.flags.fz <- true
+                                  else m.flags.fz <- false;
+                                  if (sign res = -1) then m.flags.fs <- true
+                                  else m.flags.fs <- false; 
+                                end
       
   (*| [x; Reg y] -> m.regs.(rind y) <- (Int64.add (decosrc x m) (m.regs.(rind y)))
   | [x; Ind1 y] -> m.mem.(Option.get (map_addr(immer y))) <- List.hd@@sbytes_of_int64 (Int64.sub (int64_of_sbytes (m.mem.(Option.get (map_addr(immer y)))::[])) (decosrc x m) )
@@ -298,6 +329,11 @@ let decq (l:operand) (m:mach) : unit =
   | [x; Ind3 (y, z)] -> m.mem.(Int64.to_int (immer y) + (Option.get (map_addr((m.regs.(rind z)))))) <- List.hd@@sbytes_of_int64 (Int64.sub (int64_of_sbytes (m.mem.(Int64.to_int (immer y) + (Option.get (map_addr((m.regs.(rind z))))))::[])) (decosrc x m) )
   end
   *)
+
+let decq (l:operand) (m:mach) : unit =
+  begin match l with 
+    | _ -> subq [Imm (Lit 1L); (l)] m
+  end
 
 let pushq (l:operand) (m:mach) : unit = 
   let update = m.regs.(rind Rsp) <- (Int64.sub m.regs.(rind Rsp) 8L) in 
@@ -372,67 +408,106 @@ let updater (m:mach) : unit =
 
 let step (m:mach) : unit = 
   let content = (m.mem.(Option.get (map_addr(m.regs.(rind Rip))))) in
-    let update = updater m in 
+    begin 
     begin match content with
     | InsB0 (opcode, [src; dest]) -> 
         begin match opcode with 
-        | Movq -> movq [src; dest] m
+        | Movq -> movq [src; dest] m;
+                    updater m;
+                  Printf.printf "%s \n" (string_of_opcode opcode ^ " finished \n ");
         | Addq -> let move_src = movq [src; Reg R08] m in
                     let move_dst = movq [dest; Reg R09] m in 
                       let addition = addq (Reg R08) (Reg R09) m in 
-                        movq [Reg R09; dest] m 
+                        movq [Reg R09; dest] m;
+                        updater m;
+                        Printf.printf "%s \n" (string_of_opcode opcode ^ " finished \n"); 
 
-        | Subq -> subq [src; dest] m 
+        | Subq ->  subq [src;dest] m;
+                    updater m;
+                  Printf.printf "%s \n" (string_of_opcode opcode ^ " finished \n");
         | Andq -> let move_src = movq [src; Reg R08] m in
                     let move_dst = movq [dest; Reg R09] m in 
                       let log_and = andq (Reg R08) (Reg R09) m in 
-                        movq [Reg R08; dest] m
+                        movq [Reg R08; dest] m;
+                        updater m;
+                        Printf.printf "%s \n" (string_of_opcode opcode ^ " finished \n");
         | Imulq -> let move_src = movq [src; Reg R08] m in
                     let move_dst = movq [dest; Reg R09] m in 
                       let mult = imulq (Reg R08) (Reg R09) m in 
-                        movq [Reg R09; dest] m
+                        movq [Reg R09; dest] m;
+                        updater m;
+                        Printf.printf "%s \n" (string_of_opcode opcode ^ " finished \n");
         | Orq -> let move_src = movq [src; Reg R08] m in
                   let move_dst = movq [dest; Reg R09] m in 
                     let log_or = orq (Reg R08) (Reg R09) m in 
-                      movq [Reg R08; dest] m
+                      movq [Reg R08; dest] m;
+                      updater m;
+                      Printf.printf "%s \n" (string_of_opcode opcode ^ " finished \n");
         | Shlq -> begin match src with
                     | Imm x -> let move_src = movq [src; Reg R08] m in
                                 let move_dst = movq [dest; Reg R09] m in 
                                   let log_or = shlq (Reg R08) (Reg R09) m in 
-                                    movq [Reg R09; dest] m
+                                    movq [Reg R09; dest] m;
+                                    updater m;
+                                    Printf.printf "%s \n" (string_of_opcode opcode ^ " finished \n");
                     | Reg Rcx -> let move_src = movq [src; Reg R08] m in
                                   let move_dst = movq [dest; Reg R09] m in 
                                     let log_or = shlq (Reg R08) (Reg R09) m in 
-                                      movq [Reg R09; dest] m
+                                      movq [Reg R09; dest] m;
+                                      updater m;
+                                      Printf.printf "%s \n" (string_of_opcode opcode ^ " finished \n");
                     | _ -> invalid_arg "amt must be imm or rcx" 
                   end
         | Cmpq -> let move_src = movq [src; Reg R08] m in
             let move_dst = movq [dest; Reg R09] m in 
-              cmpq (Reg R08) (Reg R09) m 
+              cmpq (Reg R08) (Reg R09) m;
+              updater m;
+              Printf.printf "%s \n" (string_of_opcode opcode ^ " finished \n"); 
         | _ -> ()
         end
     | InsB0 (opcode, [src]) -> 
       begin match opcode with 
-      | Negq ->  negq src m
-      | Incq -> incq src m
-      | Decq -> decq src m
-      | Pushq -> pushq src m
-      | Popq -> popq src m
+      | Negq ->  negq src m;
+                   updater m;
+                  Printf.printf "%s \n" (string_of_opcode opcode ^ " finished \n");
+      | Incq -> incq src m;
+                  updater m;
+      Printf.printf "%s \n" (string_of_opcode opcode ^ " finished \n");
+      | Decq -> decq src m;
+                  updater m;
+      Printf.printf "%s \n" (string_of_opcode opcode ^ " finished \n");
+      | Pushq -> pushq src m;
+                  updater m;
+      Printf.printf "%s \n" (string_of_opcode opcode ^ " finished \n");
+      | Popq -> popq src m;
+                  updater m;
+      Printf.printf "%s \n" (string_of_opcode opcode ^ " finished \n");
       | Jmp -> let move = movq [src; Reg R14] m in 
-                movq [Reg R14; Reg Rip] m
+                movq [Reg R14; Reg Rip] m;
+                updater m;
+                Printf.printf "%s \n" (string_of_opcode opcode ^ " finished \n");
       | Callq -> let move = movq [src; Reg R14] m in 
                   let push = pushq (Reg Rip) in 
-                    movq [Reg Rip; Reg R14] m
+                    movq [Reg Rip; Reg R14] m;
+                    Printf.printf "%s \n" (string_of_opcode opcode ^ " finished \n");
       | J cnd -> if interp_cnd m.flags cnd then 
                   movq [src; Reg Rip] m 
+                 else updater m;
+                  
+
+      Printf.printf "%s \n" (string_of_opcode opcode ^ " finished \n"); 
                   
       | _ -> ()
       end
-    | InsB0 (Retq, []) -> popq (Reg Rip) m  
+    | InsB0 (Retq, []) -> popq (Reg Rip) m;
+        updater m;
+
+        Printf.printf "%s \n" ("retq" ^ " finished \n");  
     | InsFrag -> invalid_arg "InsFrag"
     | Byte c -> invalid_arg "Byte"
     | _ -> invalid_arg "not an instruction" 
-   end
+   end; 
+  end
 (* Runs the machine until the rip register reaches a designated
    memory address. Returns the contents of %rax when the 
    machine halts. *)
@@ -566,6 +641,7 @@ let assemble (p:prog) : exec =
           let print = Printf.printf " passed \n" in 
             let text_seg = create_txt_seg p lbl_list in 
               let data_seg = create_data_seg p in 
+                let check_main = check_und "main" lbl_address in 
               (*let print = print_int (List.length text_seg) in*)
                 let exe : exec =  
                   {entry = Int64.add mem_bot 8L;

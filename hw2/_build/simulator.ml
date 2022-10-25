@@ -145,11 +145,6 @@ let debug_simulator = ref false
 let sign (n:quad) : (int) =  
   Int64.compare n 0L
 
-let stater (m:mach) : unit =
-  match m with
-    |_ -> print_string ("Rbx: " ^ (Int64.to_string(m.regs.(rind Rbx))) ^ " Rax: " ^ (Int64.to_string(m.regs.(rind Rax))) ^ "*65528: " ^ (Int64.to_string@@int64_of_sbytes((m.mem.(65528))::[])) ^ "END STATE ")
-
-
 (* Interpret a condition code with respect to the given flags. *)
 let interp_cnd {fo; fs; fz} : cnd -> bool = function
   |Eq -> (if fz == true then (true) else (false))
@@ -201,10 +196,21 @@ let storer (data:int64) (a:int64) (m:mach) =
       m.mem.(addr+6) <- List.nth sbytes 6;
       m.mem.(addr+7) <- List.nth sbytes 7
 
+let byte_storer (data:int64) (a:int64) (ind:int) (m:mach) = 
+  let addr = Option.get(map_addr a) in 
+    let sbytes = sbytes_of_int64 data in
+      m.mem.(addr+ind) <- List.nth sbytes ind
+
 let store (dst:operand) (data:int64) (m:mach) = 
   match dst with 
     |Reg x -> m.regs.(rind x) <- data
     |Ind1 _ |Ind2 _ |Ind3 _ -> storer data (addrcalc dst m) m
+    |_ -> failwith "Destination cannot be Imm!"
+
+let store_to_byte (dst:operand) (ind:int) (data:int64) (m:mach) = 
+  match dst with 
+    |Reg r -> m.regs.(rind r) <- Int64.logor (Int64.shift_left (Int64.shift_right_logical m.regs.(rind r) 8) 8) data
+    |Ind1 _ |Ind2 _ |Ind3 _ -> byte_storer data (addrcalc dst m) ind m
     |_ -> failwith "Destination cannot be Imm!"
 
 let load (src:operand) (m:mach) : int64 = 
@@ -212,7 +218,7 @@ let load (src:operand) (m:mach) : int64 =
     |Reg x -> m.regs.(rind x) 
     |Imm l -> immer l
     |Ind1 _ | Ind2 _ |Ind3 _ -> 
-      let addr = Option.get@@map_addr(addrcalc src m) in 
+      let addr = Option.get(map_addr(addrcalc src m)) in 
         let data = int64_of_sbytes [m.mem.(addr); m.mem.(addr + 1); m.mem.(addr + 2);
                                     m.mem.(addr + 3); m.mem.(addr + 4); m.mem.(addr + 5);
                                     m.mem.(addr + 6); m.mem.(addr + 7)];
@@ -226,22 +232,11 @@ end
 
 let fetchop (m:mach) : ins = fetcher (m.mem.(Option.get (map_addr((m.regs.(rind Rip))))))
 
-let sbyte_list (a: sbyte array) (start: int) : sbyte list =
-  Array.to_list (Array.sub a start 8)
-
-let rec copier (b: sbyte list) (addr: int)(m:mach) : unit =
-  match b with
-    |x::[]-> m.mem.(addr) <- x  
-    |h::tl-> m.mem.(addr) <- h; copier tl (addr+1) m
-
-let movq (l:operand list) (m:mach) : unit =
-  match l with
-    |[x; y] -> store y (load x m) m
-
-let pushq (l:operand) (m:mach) : unit = 
-  let update = m.regs.(rind Rsp) <- (Int64.sub m.regs.(rind Rsp) 8L) in store (Ind2 Rsp) (load l m) m
-
-let popq (l:operand) (m:mach) : unit = store l (load (Ind2 Rsp) m) m; m.regs.(rind Rsp) <- (Int64.add m.regs.(rind Rsp) 8L)
+let setflags (res:int64) (m:mach) = 
+  begin
+    if (res = 0L) then m.flags.fz <- true else m.flags.fz <- false;
+    if ((sign res) = -1) then m.flags.fs <- true else m.flags.fs <- false;
+  end 
 
 let addq (l:operand list) (m:mach) : unit =
   match l with
@@ -264,9 +259,10 @@ let subq (l:operand list) (m:mach) : unit =
     |[x; y] ->
       let src = load x m in
       let dst = load y m in
-      let update = store y (Int64.sub dst src) m in
-      let res = load y m in
+      let res = Int64.sub dst src in 
+
         begin 
+          store y res m;
           if ((src = Int64.min_int) || ((sign src) = (sign dst)) && ((sign src) <> (sign res))) then m.flags.fo <- true
           else m.flags.fo <- false;  
           if (sign res = 0) then m.flags.fz <- true
@@ -275,18 +271,20 @@ let subq (l:operand list) (m:mach) : unit =
           else m.flags.fs <- false; 
         end
     
-let imulq (Reg x) (Reg y) (m:mach) : unit = 
-  let value = Int64.mul (m.regs.(rind x)) (m.regs.(rind y)) in
+let imulq (l:operand list) (m:mach) : unit = 
+  match l with 
+    |[x; y] -> let src = load x m in
+               let dst = load y m in 
+               let value = Int64.mul src dst in
     begin 
-      if ((sign (m.regs.(rind x)) <> sign ((m.regs.(rind y))) && sign(value) = 1) || (sign (m.regs.(rind x)) == sign ((m.regs.(rind y))) && sign(value) = -1)) 
-        then m.flags.fo <- true 
+      if ((sign (src) <> sign (dst) && sign(value) = 1) || (sign (src) == sign (dst) && sign(value) = -1)) then m.flags.fo <- true 
       else m.flags.fo <- false; 
-      m.regs.(rind y) <- value;
+      store y value m;
     end  
 
-let incq (l:operand) (m:mach) : unit = store l (Int64.add (load l m) 1L) m
+let incq (l:operand) (m:mach) : unit = addq [Imm (Lit 1L); l] m
 
-let decq (l:operand) (m:mach) : unit = store l (Int64.sub (load l m) 1L) m
+let decq (l:operand) (m:mach) : unit = subq [Imm (Lit 1L); l] m
 
 let notq (l:operand) (m:mach) : unit  = store l (Int64.lognot (load l m)) m
 
@@ -305,39 +303,71 @@ let andq (l:operand list) (m:mach) =
           else m.flags.fs <- false; 
         end
 
-let orq (Reg x) (Reg y) (m:mach) : unit = 
-  let value = Int64.logor (m.regs.(rind x)) (m.regs.(rind y)) in 
-    let update = m.regs.(rind y) <- value  in
-      begin 
-        m.flags.fo <- false;
-        if (sign value = 0) then m.flags.fz <- true else m.flags.fz <- false;
-        if (sign value = -1) then m.flags.fs <- true else m.flags.fs <- false
-      end
+let orq (l:operand list) (m:mach) : unit = 
+  match l with 
+    |[x; y] ->
+      let value = Int64.logor (load y m) (load x m) in 
+      let update = store y value m in
+        begin 
+          m.flags.fo <- false;
+          if (sign value = 0) then m.flags.fz <- true else m.flags.fz <- false;
+          if (sign value = -1) then m.flags.fs <- true else m.flags.fs <- false
+        end
 
-let shlq(l: operand list) (m:mach) : unit =
-  match l with
-    |[x; y] -> store y (Int64.shift_left (load y m) (Int64.to_int(load x m))) m
+let xorq (l:operand list) (m:mach) : unit = 
+  match l with 
+    |[x; y] -> 
+      let value = Int64.logxor (load y m) (load x m) in 
+      let update = store y value m in setflags value m
 
-let leaq (l:operand list) (m:mach) : unit = 
+let sarq (l:operand list) (m:mach) =
   match l with
-    |[x; y] -> store y (load x m) m
+    |[x; y] -> let value = Int64.shift_right (load y m) (Int64.to_int(load x m)) in store y value m;
+    begin 
+      if ((load x m) = 1L) then m.flags.fo <- false;
+      if ((load x m) <> 0L) then setflags value m;
+    end
+
+let shlq (l:operand list) (m:mach) : unit =
+  match l with
+    |[x; y] -> let dest = (load y m) in 
+               let value = Int64.shift_left dest (Int64.to_int(load x m)) in store y value m;
+    begin 
+      if (((load x m) = 1L) && (Int64.shift_right_logical dest 63 <> (Int64.logand (Int64.shift_right_logical dest 62) 1L))) then m.flags.fo <- false;
+      if ((load x m) <> 0L) then setflags value m;
+    end
+
+let shrq (l:operand list) (m:mach) : unit =
+  match l with
+    |[x; y] -> let dest = (load y m) in 
+               let value = Int64.shift_right_logical dest (Int64.to_int(load x m)) in 
+               let update = store y value m in
+    begin
+      if ((load x m) <> 0L) then setflags value m;
+      if ((load x m) = 1L) then m.flags.fo <- (Int64.shift_right_logical dest 63) = Int64.one;
+    end 
+
+let setb (cc:cnd) (dst:operand) (m:mach) =
+  if (interp_cnd m.flags) cc then store_to_byte dst 0 1L m else store_to_byte dst 0 0L m
 
 let negq (l:operand) (m:mach) : unit = 
   let check =  if (Int64.equal (load l m) (Int64.min_int)) then m.flags.fo <- true 
                 else m.flags.fo <- false in
   let not = notq l m in
   let update = store l (Int64.add (load l m) (1L)) m in
-  let value = load l m in
-    begin 
-      if ((sign value) = 0) then m.flags.fz <- true else m.flags.fz <- false;
-      if ((sign value) = -1) then m.flags.fs <- true else m.flags.fs <- false;
-      (*Printf.printf "%s \n" (Int64.to_string value);        
-      Printf.printf "%s \n" (Int.to_string@@sign value);
-      Printf.printf "%s" (Bool.to_string m.flags.fo);
-      Printf.printf "%s" (Bool.to_string m.flags.fs);
-      Printf.printf "%s\n" (Bool.to_string m.flags.fz);*)
-    end
+  let value = load l m in setflags value m
   
+let leaq (l:operand list) (m:mach) : unit = 
+  match l with
+    |[x; y] -> store y (addrcalc x m) m
+
+let movq (l:operand list) (m:mach) : unit =
+  match l with
+    |[x; y] -> store y (load x m) m
+
+let pushq (l:operand) (m:mach) : unit = m.regs.(rind Rsp) <- (Int64.sub m.regs.(rind Rsp) 8L); store (Ind2 Rsp) (load l m) m
+
+let popq (l:operand) (m:mach) : unit = store l (load (Ind2 Rsp) m) m; m.regs.(rind Rsp) <- (Int64.add m.regs.(rind Rsp) 8L)
     
 let cmpq (l:operand list) (m:mach) =
   match l with 
@@ -356,20 +386,14 @@ let cmpq (l:operand list) (m:mach) =
                 else m.flags.fs <- false;
                 if (sign res = 0) then m.flags.fz <- true 
                 else m.flags.fz <- false;
-
-                (*Printf.printf "%s \n" (Int64.to_string res);        
-                Printf.printf "%s \n" (Int.to_string@@sign res);
-                Printf.printf "%s" (Bool.to_string m.flags.fo);
-                Printf.printf "%s" (Bool.to_string m.flags.fs);
-                Printf.printf "%s\n" (Bool.to_string m.flags.fz);*)
               end
 
 let jmp (l:operand) (m:mach) = m.regs.(rind Rip) <- load l m
 
 let j (cc:cnd) (l:operand) (m:mach) =
   if (interp_cnd m.flags) cc then m.regs.(rind Rip) <- load l m
-
     
+let callq (src:operand) (m:mach) = pushq (Reg Rip) m; jmp src m
 
 let updater (m:mach) : unit =
   match m with
@@ -377,48 +401,39 @@ let updater (m:mach) : unit =
 
 let step (m:mach) : unit = 
   let instr = (fetchop m) in
-    let update = updater m in  
-      let mat = match instr with
-        |(Movq, ops) -> movq ops m 
+    let update = updater m in 
+      match instr with
         |(Negq, ops) -> negq (List.hd ops) m
         |(Addq, ops) -> addq ops m
         |(Subq, ops) -> subq ops m
+        |(Imulq, ops) -> imulq ops m
         |(Incq, ops) -> incq (List.hd ops) m
         |(Decq, ops) -> decq (List.hd ops) m
-        |(Leaq, ops) -> leaq ops m
         |(Notq, ops) -> notq (List.hd ops) m
         |(Andq, ops) -> andq ops m
-        |(Pushq, ops) -> pushq (List.hd ops) m
+        |(Orq, ops) -> orq ops m
+        |(Xorq, ops) -> xorq ops m
+        |(Sarq, ops) -> sarq ops m
         |(Shlq, ops) -> shlq ops m
-        |(Cmpq, ops) -> cmpq ops m 
+        |(Shrq, ops) -> shrq ops m
+        |(Set cnd, ops) -> setb cnd (List.hd ops) m
+        |(Leaq, ops) -> leaq ops m
+        |(Movq, ops) -> movq ops m 
+        |(Pushq, ops) -> pushq (List.hd ops) m
         |(Popq, ops) -> popq (List.hd ops) m
+        |(Cmpq, ops) -> cmpq ops m 
         |(Jmp, ops) -> jmp (List.hd ops) m
-        |(J cnd, ops) -> j cnd (List.hd ops) m 
+        |(Callq, ops) -> callq (List.hd ops) m
         |(Retq, ops) -> popq (Reg Rip) m
-        |(opcode, [src; dest]) -> 
-          begin match opcode with 
-          |Imulq -> let move_src = movq [src; Reg R14] m in
-                    let move_dst = movq [dest; Reg R15] m in 
-                      let mult = imulq (Reg R14) (Reg R15) m in 
-                        movq [Reg R15; dest] m
-          | Orq -> let move_src = movq [src; Reg R14] m in
-                    let move_dst = movq [dest; Reg R15] m in 
-                      let log_or = orq (Reg R14) (Reg R15) m in 
-                        movq [Reg R15; dest] m
-          end
-                         
-        |_ -> () in 
-      print_string ((string_of_ins instr) ^ " finished! \n") 
-        
+        |(J cnd, ops) -> j cnd (List.hd ops) m 
 
-  
 (* Runs the machine until the rip register reaches a designated
    memory address. Returns the contents of %rax when the 
    machine halts. *)
-let run (m:mach) : int64 = 
-  while m.regs.(rind Rip) <> exit_addr do step m done;
-  m.regs.(rind Rax)
-
+   let run (m:mach) : int64 = 
+    while m.regs.(rind Rip) <> exit_addr do step m done;
+    m.regs.(rind Rax)
+  
 (* assembling and linking --------------------------------------------------- *)
 
 (* A representation of the executable *)
@@ -436,19 +451,19 @@ exception Undefined_sym of lbl
 exception Redefined_sym of lbl
 
 (* Convert an X86 program into an object file:
-   - separate the text and data segments
-   - compute the size of each segment
+    - separate the text and data segments
+    - compute the size of each segment
       Note: the size of an Asciz string section is (1 + the string length)
             due to the null terminator
 
-   - resolve the labels to concrete addresses and 'patch' the instructions to 
-     replace Lbl values with the corresponding Imm values.
+    - resolve the labels to concrete addresses and 'patch' the instructions to 
+      replace Lbl values with the corresponding Imm values.
 
-   - the text segment starts at the lowest address
-   - the data segment starts after the text segment
+    - the text segment starts at the lowest address
+    - the data segment starts after the text segment
 
   HINT: List.fold_left and List.fold_right are your friends.
- *)
+  *)
 
 
 let rec text_len (p:prog) (i:int)  : int = 
@@ -462,22 +477,20 @@ let rec text_len (p:prog) (i:int)  : int =
             end
 end
 
-
-
 let rec label_list (p:prog) (addr:quad) (lbl_addr: (string*quad) array) (i:int) : ((string*quad) array) = 
   begin match p with
   | [] -> lbl_addr
   | x::xs -> begin match x.asm with 
             | Text ins_list -> if (Array.exists (fun (a) -> String.equal (fst a) x.lbl) lbl_addr) 
                                   then raise (Redefined_sym x.lbl)  
-                               else
+                                else
                                 let u = Array.set lbl_addr i (x.lbl, addr) in 
                                 let new_addr = (Int64.add (addr) (Int64.mul (Int64.of_int (List.length ins_list)) 8L)) in 
                                   (*let print = print_string (" " ^ (Int64.to_string new_addr)^ " ") in*) 
                                     label_list xs (new_addr) (lbl_addr) (i+1)
             | Data data_list -> let u = Array.set lbl_addr i (x.lbl, addr) in 
                                   let new_addr = (Int64.add (addr) (Int64.of_int(Int.mul (List.length data_list) 8))) in 
-                                   (*let print = Printf.printf "%s" (Int64.to_string new_addr) in *)
+                                    (*let print = Printf.printf "%s" (Int64.to_string new_addr) in *)
                                     label_list xs (new_addr) (lbl_addr) (i+1)
             end
   end
@@ -539,22 +552,20 @@ let assemble (p:prog) : exec =
   let text_length = text_len p 0 in
     let data_pos = Int64.add (mem_bot) (Int64.of_int(Int.mul text_length 8)) in
       (*let print = print_string (" " ^ (Int64.to_string data_pos)^ " ") in*) 
-       let lbl_address = Array.make (List.length p) ("empty", 0L) in 
+        let lbl_address = Array.make (List.length p) ("empty", 0L) in 
         let lbl_list = label_list p mem_bot lbl_address 0 in
-        let print = Array.iter (fun (x, y) -> Printf.printf "(%s,%d)" x (Int64.to_int y)) lbl_address in 
-          let print = Printf.printf " passed \n" in 
-            let text_seg = create_txt_seg p lbl_list in 
-              let data_seg = create_data_seg p in 
-                let check_main = check_und "main" lbl_address in 
-              (*let print = print_int (List.length text_seg) in*)
-                let exe : exec =  
-                  {entry = check_main ;
-                    text_pos = mem_bot; 
-                    data_pos = data_pos; 
-                    text_seg = text_seg; 
-                    data_seg = data_seg
-                  }
-                  in exe
+        let text_seg = create_txt_seg p lbl_list in 
+        let data_seg = create_data_seg p in 
+        let check_main = check_und "main" lbl_address in 
+      (*let print = print_int (List.length text_seg) in*)
+        let exe : exec =  
+          {entry = check_main ;
+            text_pos = mem_bot; 
+            data_pos = data_pos; 
+            text_seg = text_seg; 
+            data_seg = data_seg
+          }
+        in exe
 (* Convert an object file into an executable machine state. 
     - allocate the mem array
     - set up the memory state by writing the symbolic bytes to the 
@@ -577,6 +588,6 @@ let load {entry; text_pos; data_pos; text_seg; data_seg} : mach =
       regs = regs;
       mem = mem
     } 
-    in let update_stack =  copier(sbytes_of_int64 exit_addr) (Option.get(map_addr(Int64.sub mem_top 8L))) m
-      in let update_rip = (m.regs.(rind Rip) <- text_pos) 
+    in let update_stack =  store (Ind1 (Lit (Int64.sub mem_top 8L))) exit_addr m
+      in let update_rip = (m.regs.(rind Rip) <- entry) 
         in let u_rsp = (m.regs.(rind Rsp) <- Int64.sub mem_top 8L) in m

@@ -1,0 +1,5 @@
+# dune init proj hw3
+# OCAMLPARAM: unset
+# Shared cache: disabled
+# Workspace root: /home/gponti/cdesign
+# Auto-detected concurrency: 8

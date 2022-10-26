@@ -188,7 +188,7 @@ let rec size_ty (tdecls:(tid * ty) list) (t:Ll.ty) : int =
 *)
 let compile_gep (ctxt:ctxt) (op : Ll.ty * Ll.operand) (path: Ll.operand list) : ins list =
   match op with
-  | (Ptr ty, operand) -> let base_addr = (lookup operand ctxt.layout) in ()
+  | (Ptr ty, operand) -> []
   | (_, _ ) -> invalid_arg "Op must be Pointer!"
 
 (* compiling instructions  -------------------------------------------------- *)
@@ -214,9 +214,8 @@ let compile_gep (ctxt:ctxt) (op : Ll.ty * Ll.operand) (path: Ll.operand list) : 
 
    - Bitcast: does nothing interesting at the assembly level
 *)
-let compile_insn (ctxt:ctxt) ((uid:uid), (i:Ll.insn)) : X86.ins list =
-      failwith "compile_insn not implemented"
-
+let compile_insn (ctxt:ctxt) ((uid:uid), (i:Ll.insn)) : X86.ins list = 
+failwith "not implemented"
 
 
 (* compiling terminators  --------------------------------------------------- *)
@@ -266,8 +265,15 @@ let compile_lbl_block fn lbl ctxt blk : elem =
 
    [ NOTE: the first six arguments are numbered 0 .. 5 ]
 *)
-let arg_loc (n : int) : operand =
-failwith "arg_loc not implemented"
+let arg_loc (n : int) : operand = 
+  match n with 
+  | 0 -> Reg Rdi
+  | 1 -> Reg Rsi
+  | 2 -> Reg Rdx
+  | 3 -> Reg Rcx 
+  | 4 -> Reg R08
+  | 5 -> Reg R09
+  | x -> Ind3 (Lit (Int64.mul (-8L) (Int64.of_int (x-4))), Rsp) 
 
 
 (* We suggest that you create a helper function that computes the
@@ -279,8 +285,20 @@ failwith "arg_loc not implemented"
    - see the discussion about locals
 
 *)
+
+let rec compute_args (lbled_blocks:(lbl*block) list) : uid list = 
+  match lbled_blocks with 
+  | [] -> []
+  | (x, y)::xs -> List.append (compute_args(xs)) (List.map (fun (x, y) -> x) y.insns)
+
 let stack_layout (args : uid list) ((block, lbled_blocks):cfg) : layout =
-failwith "stack_layout not implemented"
+  let ls = List.flatten (args::(List.map (fun (x, y) -> x) block.insns)::[(compute_args (lbled_blocks))]) in
+  let args_length = List.length ls in 
+    let layout_ = ref [] in 
+      for i=0 to args_length-1 do
+        layout_ := List.append (!layout_) [((List.nth ls i), Ind3(Lit (Int64.of_int (-8 * (i+1))), Rbp))]; 
+      done;
+    !layout_
 
 (* The code for the entry-point of a function must do several things:
 
@@ -299,7 +317,15 @@ failwith "stack_layout not implemented"
      to hold all of the local stack slots.
 *)
 let compile_fdecl (tdecls:(tid * ty) list) (name:string) ({ f_ty; f_param; f_cfg }:fdecl) : prog =
-failwith "compile_fdecl unimplemented"
+  let ctxt = {tdecls = tdecls; layout = stack_layout f_param f_cfg} in 
+    let elem1 = {lbl = name; global = false; asm = Text (compile_block (name) (ctxt) (fst f_cfg))} in 
+      let prog = ref [elem1] in 
+        for i=0 to List.length (snd f_cfg) do 
+          let curr_block := List.nth (snd f_cfg) i in
+          elem = compile_lbl_block (name) (fst curr_block) ctxt (snd curr_block);
+          prog := List.append (!prog) (elem);
+        done; 
+        !prog
 
 
 

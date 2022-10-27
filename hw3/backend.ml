@@ -191,6 +191,18 @@ let compile_gep (ctxt:ctxt) (op : Ll.ty * Ll.operand) (path: Ll.operand list) : 
   | (Ptr ty, operand) -> []
   | (_, _ ) -> invalid_arg "Op must be Pointer!"
 
+let get_dst (arg_nr:int) : X86.operand =
+  begin match arg_nr with 
+  | 0 -> Reg Rdi
+  | 1 -> Reg Rsi
+  | 2 -> Reg Rdx
+  | 3 -> Reg Rcx
+  | 4 -> Reg R08
+  | 5 -> Reg R09
+  | _ -> (Ind3 (Lit (Int64.of_int ((arg_nr - 6)*8)), Rsp))
+end 
+
+
 (* compiling instructions  -------------------------------------------------- *)
 
 (* The result of compiling a single LLVM instruction might be many x86
@@ -215,8 +227,63 @@ let compile_gep (ctxt:ctxt) (op : Ll.ty * Ll.operand) (path: Ll.operand list) : 
    - Bitcast: does nothing interesting at the assembly level
 *)
 let compile_insn (ctxt:ctxt) ((uid:uid), (i:Ll.insn)) : X86.ins list = 
-failwith "not implemented"
-
+  let res = lookup ctxt.layout uid in
+  begin match i with 
+  | Binop (bop, ty, op1, op2) -> 
+    begin match bop with 
+    | Add -> [(compile_operand ctxt (Reg R11)) op1] @ 
+              [(compile_operand ctxt (Reg R12)) op2] @ 
+              [(Addq, [Reg R11; Reg R12])] @ 
+              [(Movq, [Reg R12; (res)])]
+    | Sub -> [(compile_operand ctxt (Reg R11)) op1] @ 
+              [(compile_operand ctxt (Reg R12)) op2] @ 
+              [(Subq, [Reg R11; Reg R12])] @ 
+              [(Movq, [Reg R12; (res)])] 
+    | Mul -> [(compile_operand ctxt (Reg R11)) op1] @ 
+              [(compile_operand ctxt (Reg R12)) op2] @ 
+              [(Imulq, [Reg R11; Reg R12])] @ 
+              [(Movq, [Reg R12; (res)])] 
+    | Shl -> [(compile_operand ctxt (Reg R11)) op1] @ 
+              [(compile_operand ctxt (Reg R12)) op2] @ 
+              [(Shlq, [Reg R11; Reg R12])] @ 
+              [(Movq, [Reg R12; (res)])]
+    | Lshr -> [(compile_operand ctxt (Reg R11)) op1] @ 
+              [(compile_operand ctxt (Reg R12)) op2] @ 
+              [(Shrq, [Reg R11; Reg R12])] @ 
+              [(Movq, [Reg R12; (res)])]
+    | Ashr -> [(compile_operand ctxt (Reg R11)) op1] @ 
+              [(compile_operand ctxt (Reg R12)) op2] @ 
+              [(Sarq, [Reg R11; Reg R12])] @ 
+              [(Movq, [Reg R12; (res)])]
+    | And -> [(compile_operand ctxt (Reg R11)) op1] @ 
+              [(compile_operand ctxt (Reg R12)) op2] @ 
+              [(Andq, [Reg R11; Reg R12])] @ 
+              [(Movq, [Reg R12; (res)])]
+    | Or -> [(compile_operand ctxt (Reg R11)) op1] @ 
+              [(compile_operand ctxt (Reg R12)) op2] @ 
+              [(Orq, [Reg R11; Reg R12])] @ 
+              [(Movq, [Reg R12; (res)])]
+    | Xor -> [(compile_operand ctxt (Reg R11)) op1] @ 
+              [(compile_operand ctxt (Reg R12)) op2] @ 
+              [(Xorq, [Reg R11; Reg R12])] @ 
+              [(Movq, [Reg R12; (res)])]
+  end
+  | Alloca ty -> [(Subq, [Imm (Lit (Int64.of_int (size_ty ctxt.tdecls ty))); Reg Rsp])] @ [(Movq, [Reg Rsp; res])]
+  | Load (ty, op) -> [compile_operand ctxt (Reg R11) op] @ 
+                     [(Movq, [Reg R11; res])]
+  | Store (ty, op1, op2) -> [compile_operand ctxt (Reg R11) op1] @
+                            [compile_operand ctxt (Reg R12) op2] @ 
+                            [(Movq, [Reg R11; Ind2 (R12)])] 
+  | Icmp (cnd, ty, op1, op2) -> [compile_operand ctxt (Reg R11) op1]@
+                                [compile_operand ctxt (Reg R12) op2]@
+                                [(Cmpq, [Reg R11; Reg R12])]@
+                                [(Set (compile_cnd cnd), [res])]
+  | Call (ty, op1, ls) -> []
+  | Bitcast (ty1, op, ty2) -> [compile_operand ctxt (Reg R11) op]@
+                              [(Movq, [Reg R11; res])]
+  | Gep (ty, op, ls) -> []
+  | _ -> []  
+  end
 
 (* compiling terminators  --------------------------------------------------- *)
 
@@ -237,8 +304,19 @@ let mk_lbl (fn:string) (l:string) = fn ^ "." ^ l
    [fn] - the name of the function containing this terminator
 *)
 let compile_terminator (fn:string) (ctxt:ctxt) (t:Ll.terminator) : ins list =
-  failwith "compile_terminator not implemented"
-
+  match t with 
+  | Ret (ty, ops) -> begin match ops with 
+                      | None -> [(Movq, [Reg Rbp; Reg Rsp])] @ [(Retq, [])]
+                      | Some x -> begin match ty with 
+                                  | Void -> [(Movq, [Reg Rbp; Reg Rsp])] @ [(Retq, [])]
+                                  | _ -> [(compile_operand ctxt (Reg Rax)) x] @ [(Movq, [Reg Rbp; Reg Rsp])] @ [(Retq, [])]
+                                  end
+                      end
+  | Br lbl -> [(Jmp, [(Imm (Lbl (Platform.mangle lbl)))])]
+  | Cbr (ops, l1, l2) -> [((compile_operand ctxt (Reg R10)) ops)] @ 
+                          [(Cmpq, [Imm (Lit 1L); Reg R10])] @
+                          [(J Eq, [Imm (Lbl (Platform.mangle l1))])] @ 
+                          [(Jmp, [Imm (Lbl (Platform.mangle l2))])]
 
 (* compiling blocks --------------------------------------------------------- *)
 
@@ -321,9 +399,9 @@ let compile_fdecl (tdecls:(tid * ty) list) (name:string) ({ f_ty; f_param; f_cfg
     let elem1 = {lbl = name; global = false; asm = Text (compile_block (name) (ctxt) (fst f_cfg))} in 
       let prog = ref [elem1] in 
         for i=0 to List.length (snd f_cfg) do 
-          let curr_block := List.nth (snd f_cfg) i in
-          elem = compile_lbl_block (name) (fst curr_block) ctxt (snd curr_block);
-          prog := List.append (!prog) (elem);
+          let curr_block = List.nth (snd f_cfg) i in
+          let elem = compile_lbl_block (name) (fst curr_block) ctxt (snd curr_block) in
+          prog := List.append (!prog) [(elem)];
         done; 
         !prog
 

@@ -67,26 +67,26 @@ let lookup m x = List.assoc x m
 (* function, whose job is to generate the X86 instruction that moves an    *)
 (* LLVM operand into a designated destination (usually a register).        *)
 
-let calc_loc (i,lt) uid =
+let calc_loc ((i:int), (lt:layout)) (uid:uid) : int*layout =
     (i+1, lt @ [(uid, (X86.Ind3 (Lit (Int64.of_int (i * -8)), Rbp)))]) 
 
-let generate_layout (i,lt) uid_lst = 
+let generate_layout ((i:int), (lt:layout)) (uid_lst:uid list) : int*layout = 
     (List.fold_left calc_loc (i,lt) uid_lst)
 
-let compile_operand ctxt dest : Ll.operand -> ins =
+let compile_operand (ctxt:ctxt) (dest:X86.operand) : Ll.operand -> ins =
   fun (x: Ll.operand) -> begin match x with
       | Null -> (Movq, [Imm (Lit 0L); dest ])
       | Const n -> (Movq, [Imm (Lit n); dest ])
-      | Id i -> (Movq, [Reg R10; dest])
+      | Id i -> (Movq, [(lookup ctxt.layout i); dest])
       | Gid g -> (Leaq, [(Ind3((Lbl (Platform.mangle g)), (Rip))); (dest)])
         (*(Movq, [Ind2( R10); dest])*)
     end
 
-let compile_operand_list ctxt dest ll_op: ins list =
+let compile_operand_list (ctxt:ctxt) (dest:X86.operand) (ll_op:Ll.operand) : ins list =
   begin match ll_op with
     (*| Gid g -> (Leaq, [(Ind3((Lbl (Platform.mangle g)), (Rip))); (Reg R10)]):: 
         [(compile_operand ctxt dest ll_op)])*)
-    | Id i -> (Movq, [List.assoc i ctxt.layout; (Reg R10)])::
+    | Id i -> (*(Movq, [List.assoc i ctxt.layout; (Reg R10)])::*)
               (compile_operand ctxt dest ll_op)::[]
     | _ -> (compile_operand ctxt dest ll_op)::[]
   end
@@ -94,11 +94,11 @@ let compile_operand_list ctxt dest ll_op: ins list =
 (* compiling call                                                          *)
 (* ----------------------------------------------------------              *)
 
-let compile_call ctxt uid (_, y, z) =
+let compile_call (ctxt:ctxt) (uid:uid) (_, (y:Ll.operand), (z:(ty * Ll.operand) list)) : ins list =
   let s_slots = (List.length z - 6) in
  
-  let save_regs =  (Pushq, [Reg Rbp])::[] in
-  let revert_regs =  (Popq, [X86.Reg Rbp])::[] in
+  let save_regs =  [(Pushq, [Reg Rbp])] in
+  let revert_regs =  [(Popq, [X86.Reg Rbp])] in
 
   let f = fun i (t, op) -> 
     let g = fun n ->  begin match n with
@@ -160,7 +160,7 @@ let compile_call ctxt uid (_, y, z) =
 (* size of its definition - Void, i8, and functions have undefined sizes   *)
 (* according to LLVMlite your function should simply return 0              *)
 
-let rec size_ty tdecls t : int =
+let rec size_ty (tdecls: (tid * ty) list) (t:Ll.ty) : int =
   let add td size e: int =
     size + (size_ty td e)
   in
@@ -183,7 +183,7 @@ let convert op =
     | _ -> Int64.zero
    end
 
-let rec from_list tdecls lst num ind ins = 
+let rec from_list (tdecls:(tid * ty) list) (lst) (num:int) (ind) (ins) = 
     if num = ind then ins
     else begin 
      let nins = ins @ 
@@ -191,7 +191,7 @@ let rec from_list tdecls lst num ind ins =
      (from_list tdecls lst num (ind+1) nins)
     end
 
-let translate tdecls (t,i) num =
+let translate (tdecls:(tid * ty) list) (t,i) num =
     begin match t with
     | Struct lst -> 
             ((List.nth lst (Int64.to_int num)), from_list tdecls lst (Int64.to_int num) 0 i)
@@ -215,7 +215,7 @@ let translate tdecls (t,i) num =
 (* the index is valid, the remainder of the path is computed as in (4),    *)
 (* but relative to the type f the sub-element picked out by the path so    *)
 (* far                                                                     *)
-let compile_gep ctxt (op : Ll.ty * Ll.operand) (path: Ll.operand list) : ins list =
+let compile_gep (ctxt:ctxt) (op : Ll.ty * Ll.operand) (path: Ll.operand list) : ins list =
     begin match op with
     | (Ptr p, o) -> 
             
@@ -260,7 +260,7 @@ let compile_gep ctxt (op : Ll.ty * Ll.operand) (path: Ll.operand list) : ins lis
 (* the global identifier. - Alloca: needs to return a pointer into the     *)
 (* stack - Bitcast: does nothing interesting at the assembly level         *)
 
-let compile_insn ctxt (uid, i) : X86.ins list =
+let compile_insn (ctxt:ctxt) (uid, i) : X86.ins list =
 
   begin match i with
     | Binop(b, t, op1, op2) -> 
@@ -468,7 +468,7 @@ let compile_fdecl tdecls name { f_ty; f_param; f_cfg } =
   
   let f = fun (i: int) (x: uid) ->
     let op = arg_loc i in
-    (Movq, [op; Reg R10])::(Movq, [Reg R10; List.assoc x lyt])::[]
+    (Movq, [op; List.assoc x lyt])::[]
   in
   
   let args = List.flatten (List.mapi f f_param) in
@@ -484,7 +484,7 @@ let compile_fdecl tdecls name { f_ty; f_param; f_cfg } =
   (compile_block ctxt  blk1)
   in
   
-  let elem = Asm.gtext (Platform.mangle  name) insl in
+  let elem = Asm.gtext (Platform.mangle name) insl in
 
   let blk_list =
     begin match f_cfg with

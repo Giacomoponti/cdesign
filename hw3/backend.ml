@@ -126,7 +126,7 @@ let compile_operand (ctxt:ctxt) (dest:X86.operand) : Ll.operand -> ins =
 *)
 
 
-let arg_reg : int -> (X86.operand) option = function
+(*let arg_reg : int -> (X86.operand) option = function
   | 0 -> Some (Reg Rdi)
   | 1 -> Some (Reg Rsi)
   | 2 -> Some (Reg Rdx)
@@ -134,7 +134,7 @@ let arg_reg : int -> (X86.operand) option = function
   | 4 -> Some (Reg R08)
   | 5 -> Some (Reg R09)
   | n -> None
-
+DELETE THIS!*)
 
   let arg_loc (n : int) : operand = 
     match n with 
@@ -148,11 +148,10 @@ let arg_reg : int -> (X86.operand) option = function
 
 
   
-let compile_call ctxt fop args =
-  let op_to_rax = compile_operand ctxt (Reg Rax) in
-  let call_code, op = match fop with
+let compile_call ctxt func args =
+  let call_code, op = match func with
     | Gid g -> [], Imm (Lbl (Platform.mangle g))
-    | Id _ -> [op_to_rax fop], (Reg Rax)
+    | Id _ -> [compile_operand ctxt (Reg R10) func], (Reg R10)
     | _ -> failwith "call function operand was not a local or global id"
   in
   let n = List.length args in 
@@ -160,15 +159,15 @@ let compile_call ctxt fop args =
   let argcode = ref [] in
   for i = 0 to n-1 do
     if i < 6 then 
-      argcode := List.append !argcode ([compile_operand ctxt (Reg Rax) (List.nth ops i)] @ [(Movq, [Reg Rax; arg_loc i])])
+      argcode := List.append !argcode ([compile_operand ctxt (Reg R10) (List.nth ops i)] @ [(Movq, [Reg R10; arg_loc i])])
     else 
-      argcode := List.append !argcode ([compile_operand ctxt (Reg Rax) (List.nth ops i)] @ [Pushq, [Reg Rax]]) 
+      argcode := List.append !argcode ([compile_operand ctxt (Reg R10) (List.nth ops i)] @ [Pushq, [Reg R10]]) 
     done;
 
   !argcode @ call_code @
   (X86.Callq, [op])  ::
   (if (List.length args) > 6 then
-     Asm.([Addq, [imm_of_int (8 * ((List.length args) - 6)); ~%Rsp]])
+     ([(Addq, [Imm (Lit (Int64.of_int(8 * ((List.length args) - 6)))); Reg Rsp])])
    else [])
 
 (* compiling getelementptr (gep)  ------------------------------------------- *)
@@ -359,7 +358,7 @@ let compile_insn (ctxt:ctxt) ((uid:uid), (i:Ll.insn)) : X86.ins list =
                           code @
                           (match ty with
                           | Void -> []
-                          | _ ->  Asm.([Movq, [~%Rax; res]]))
+                          | _ ->  [(Movq, [Reg Rax; res])])
   | Bitcast (ty1, op, ty2) -> [compile_operand ctxt (Reg R11) op]@
                               [(Movq, [Reg R11; res])]
   | Gep (ty, op, ls) -> let code = compile_gep ctxt (ty, op) ls in

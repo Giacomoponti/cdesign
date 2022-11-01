@@ -240,8 +240,50 @@ let index_into tdecls (ts:ty list) (n:int) : int * ty =
       in (4), but relative to the type f the sub-element picked out
       by the path so far
 *)
+
+let helper (ty:ty) (path:Ll.operand list) (ctxt:ctxt) : ins list = 
+  let ref_type = ref ty in 
+  let ref_path = ref path in 
+  let code = ref [] in 
+  while (List.length (!ref_path) <> 0) do 
+    match (!ref_type, !ref_path) with 
+
+    | (Struct ts, Const n::rest) ->
+      let (offset, u) = index_into ctxt.tdecls ts (Int64.to_int n) in
+        code := List.append (!code) [(Addq, [Imm (Lit (Int64.of_int offset)); Reg Rax])]; 
+        ref_type := u;
+        ref_path := rest
+
+   | (Array(_, u), Const n::rest) ->
+      (* Statically calculate the offset *)
+      let offset = (size_ty ctxt.tdecls u) * (Int64.to_int n) in
+        code := List.append (!code) [(Addq, [Imm (Lit (Int64.of_int offset)); Reg Rax])]; 
+        ref_type := u;
+        ref_path := rest
+
+   | (Array(_, u), offset_op::rest) ->
+        code := List.append (!code) ([(Movq, [Reg Rax; Reg Rcx])]
+                                  @ [compile_operand ctxt (Reg Rax) offset_op]
+                                  @  [(Imulq, [Imm (Lit (Int64.of_int(size_ty ctxt.tdecls u))); Reg Rax])] 
+                                  @ [(Addq, [Reg Rcx; Reg Rax])]);
+                                  ref_type := u;
+                                  ref_path := rest        
+   | (Namedt t, p) -> ref_type := (List.assoc t ctxt.tdecls)
+
+   | _ -> failwith "compile_gep encountered unsupported getelementptr data"
+  done;
+  print_int(List.length !code);
+  !code
+
+
+
 let compile_gep (ctxt:ctxt) (op : Ll.ty * Ll.operand) (path: Ll.operand list) : ins list =
-  let op_to_rax = compile_operand ctxt (Reg Rax) in
+  match op with 
+  | (Ptr t, op) -> 
+    let code = [compile_operand ctxt (Reg Rax) (op)] in
+    List.append (code) (helper (Array(0, t)) path ctxt) 
+  | _  -> failwith "compile_gep got incorrect parameters"
+  (*let op_to_rax = compile_operand ctxt (Reg Rax) in
   let rec loop ty path code =
     match (ty, path) with
     | (_, []) -> List.rev code
@@ -270,7 +312,7 @@ let compile_gep (ctxt:ctxt) (op : Ll.ty * Ll.operand) (path: Ll.operand list) : 
   match op with
   | (Ptr t, op) -> loop (Array(0, t)) path [op_to_rax op]
   | _ -> failwith "compile_gep got incorrect parameters"
-
+*)
 
 (* compiling instructions  -------------------------------------------------- *)
 
@@ -362,7 +404,7 @@ let compile_insn (ctxt:ctxt) ((uid:uid), (i:Ll.insn)) : X86.ins list =
   | Bitcast (ty1, op, ty2) -> [compile_operand ctxt (Reg R11) op]@
                               [(Movq, [Reg R11; res])]
   | Gep (ty, op, ls) -> let code = compile_gep ctxt (ty, op) ls in
-                         code @ Asm.([ Movq, [~%Rax; res] ]) 
+                         code @ [(Movq, [Reg Rax; res])] 
   | _ -> []  
   end 
 
@@ -552,25 +594,26 @@ let stack_layout (args : uid list) ((block, lbled_blocks):cfg) : layout =
      to hold all of the local stack slots.
 *)
 let compile_fdecl (tdecls:(tid * ty) list) (name:string) ({ f_ty; f_param; f_cfg }:fdecl) : prog =
-  let entry_name = (Platform.mangle name) in
+  let f_name = (Platform.mangle name) in
   let layout = stack_layout f_param f_cfg in
-  let init_arg_code =
-    (List.mapi (fun i uid -> Asm.([ Movq, [arg_loc i; ~%Rax]
-                                ; Movq, [~%Rax; lookup layout uid] ]) )
-      f_param) |> List.flatten
+  let args =
+    List.flatten@@(List.mapi (fun i uid -> [(Movq, [arg_loc i; Reg R10])] @ [(Movq, [Reg R10; lookup layout uid])]) f_param)
   in
   let ctxt = { tdecls; layout } in
-  let tmpsize = 8 * (List.length layout) in
+  let n_args = Int64.of_int(8 * (List.length layout)) in
 
-  let prologue = Asm.([ Pushq, [~%Rbp]
-                     ; Movq, [~%Rsp; ~%Rbp]
-                     ; Subq, [~$tmpsize; ~%Rsp] ])
-                   @ init_arg_code
+  let ins = [(Pushq, [Reg Rbp])] @ [(Movq, [Reg Rsp; Reg Rbp])] @ [(Subq, [Imm (Lit n_args); Reg Rsp])]
+                   @ args
   in
-  let (entry, body) = f_cfg in
-  let entry_insns = compile_block name ctxt entry in
-  (Asm.gtext entry_name @@ prologue @ entry_insns) ::
-  (List.map (fun (lbl, blk) -> compile_lbl_block name lbl ctxt blk) body)
+  let prog = ref [] in 
+  for i = 0 to (List.length (snd f_cfg)-1) do 
+    let curr_block = List.nth (snd f_cfg) i in 
+      let elem = compile_lbl_block (name) (fst curr_block) ctxt (snd curr_block) in 
+        prog := List.append (!prog) [(elem)];
+  done;
+  let start = compile_block name ctxt (fst f_cfg) in 
+  let entry_block = compile_block name ctxt (fst f_cfg) in
+  {lbl = f_name; global = true; asm = Text (ins @ entry_block)} :: !prog
 
 
 (* compile_gdecl ------------------------------------------------------------ *)
@@ -583,7 +626,7 @@ let rec compile_ginit : ginit -> X86.data list = function
   | GInt c    -> [Quad (Lit c)]
   | GString s -> [Asciz s]
   | GArray gs | GStruct gs -> List.map compile_gdecl gs |> List.flatten
-  | GBitcast (t1,g,t2) -> compile_ginit g
+  | GBitcast (t1,g,t2) -> compile_ginit g 
 
 and compile_gdecl (_, g) = compile_ginit g
 

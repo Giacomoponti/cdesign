@@ -148,10 +148,10 @@ DELETE THIS!*)
 
 
   
-let compile_call ctxt func args =
-  let call_code, op = match func with
+let compile_call (ctxt:ctxt) (func_op:Ll.operand) (args: (ty * Ll.operand) list) =
+  let call_code, op = match func_op with
     | Gid g -> [], Imm (Lbl (Platform.mangle g))
-    | Id _ -> [compile_operand ctxt (Reg R10) func], (Reg R10)
+    | Id _ -> [compile_operand ctxt (Reg R10) func_op], (Reg R10)
     | _ -> failwith "call function operand was not a local or global id"
   in
   let n = List.length args in 
@@ -168,7 +168,7 @@ let compile_call ctxt func args =
   (X86.Callq, [op])  ::
   (if (List.length args) > 6 then
      ([(Addq, [Imm (Lit (Int64.of_int(8 * ((List.length args) - 6)))); Reg Rsp])])
-   else [])
+  else [])
 
 (* compiling getelementptr (gep)  ------------------------------------------- *)
 
@@ -203,9 +203,14 @@ let rec size_ty (tdecls:(tid * ty) list) (t:Ll.ty) : int =
   | Namedt id -> size_ty tdecls (List.assoc id tdecls)  
   | _ -> 0
 
-(* Compute the size of the offset (in bytes) of the nth element of a region
-   of memory whose types are given by the list. Also returns the nth type. *)
-let index_into tdecls (ts:ty list) (n:int) : int * ty =
+let offset_type tdecls (ts:ty list) (n:int) : int * ty =
+  let counter = ref 0 in 
+  for i=0 to n-1 do 
+    counter := !counter + size_ty tdecls (List.nth ts i)
+  done;
+  (!counter, List.nth ts n)
+
+  (*
   let rec loop ts n acc =
     begin match (ts, n) with
       | (u::_, 0) -> (acc, u)
@@ -213,7 +218,7 @@ let index_into tdecls (ts:ty list) (n:int) : int * ty =
       | _ -> failwith "index_into encountered bogus index"
     end
   in loop ts n 0
-
+*)
 
 (* Generates code that computes a pointer value.  
 
@@ -244,36 +249,36 @@ let index_into tdecls (ts:ty list) (n:int) : int * ty =
 let helper (ty:ty) (path:Ll.operand list) (ctxt:ctxt) : ins list = 
   let ref_type = ref ty in 
   let ref_path = ref path in 
-  let code = ref [] in 
+  let ref_output = ref [] in 
   while (List.length (!ref_path) <> 0) do 
     match (!ref_type, !ref_path) with 
 
-    | (Struct ts, Const n::rest) ->
-      let (offset, u) = index_into ctxt.tdecls ts (Int64.to_int n) in
-        code := List.append (!code) [(Addq, [Imm (Lit (Int64.of_int offset)); Reg Rax])]; 
-        ref_type := u;
-        ref_path := rest
+    | (Struct ls1, Const n::ls2) ->
+      let (offset, new_type) = offset_type ctxt.tdecls ls1 (Int64.to_int n) in
+        ref_output := List.append (!ref_output) [(Addq, [Imm (Lit (Int64.of_int offset)); Reg Rax])]; 
+        ref_type := new_type;
+        ref_path := ls2
 
-   | (Array(_, u), Const n::rest) ->
+   | (Array(_, new_type), Const n::ls) ->
       (* Statically calculate the offset *)
-      let offset = (size_ty ctxt.tdecls u) * (Int64.to_int n) in
-        code := List.append (!code) [(Addq, [Imm (Lit (Int64.of_int offset)); Reg Rax])]; 
-        ref_type := u;
-        ref_path := rest
+      let offset = (size_ty ctxt.tdecls new_type) * (Int64.to_int n) in
+        ref_output := List.append (!ref_output) [(Addq, [Imm (Lit (Int64.of_int offset)); Reg Rax])]; 
+        ref_type := new_type;
+        ref_path := ls
 
-   | (Array(_, u), offset_op::rest) ->
-        code := List.append (!code) ([(Movq, [Reg Rax; Reg Rcx])]
+   | (Array(_, new_type), offset_op::ls) ->
+        ref_output := List.append (!ref_output) ([(Movq, [Reg Rax; Reg Rcx])]
                                   @ [compile_operand ctxt (Reg Rax) offset_op]
-                                  @  [(Imulq, [Imm (Lit (Int64.of_int(size_ty ctxt.tdecls u))); Reg Rax])] 
+                                  @  [(Imulq, [Imm (Lit (Int64.of_int(size_ty ctxt.tdecls new_type))); Reg Rax])] 
                                   @ [(Addq, [Reg Rcx; Reg Rax])]);
-                                  ref_type := u;
-                                  ref_path := rest        
-   | (Namedt t, p) -> ref_type := (List.assoc t ctxt.tdecls)
+                                  ref_type := new_type;
+                                  ref_path := ls        
+   | (Namedt t, _) -> ref_type := (lookup ctxt.tdecls t)
 
    | _ -> failwith "compile_gep encountered unsupported getelementptr data"
   done;
-  print_int(List.length !code);
-  !code
+  (*print_int(List.length !code);*)
+  !ref_output
 
 
 
@@ -282,7 +287,8 @@ let compile_gep (ctxt:ctxt) (op : Ll.ty * Ll.operand) (path: Ll.operand list) : 
   | (Ptr t, op) -> 
     let code = [compile_operand ctxt (Reg Rax) (op)] in
     List.append (code) (helper (Array(0, t)) path ctxt) 
-  | _  -> failwith "compile_gep got incorrect parameters"
+  | _  -> failwith "input must be a pointer!! "
+  
   (*let op_to_rax = compile_operand ctxt (Reg Rax) in
   let rec loop ty path code =
     match (ty, path) with
@@ -396,8 +402,8 @@ let compile_insn (ctxt:ctxt) ((uid:uid), (i:Ll.insn)) : X86.ins list =
                                 [(Cmpq, [Reg R12; Reg R11])]@
                                 [(Set (compile_cnd cnd), [res])] @
                                 [(Andq, [Imm (Lit 1L); res])]
-  | Call (ty, op1, ls) -> let code = compile_call ctxt op1 ls in
-                          code @
+  | Call (ty, op1, ls) -> let call_code = compile_call ctxt op1 ls in
+                          call_code @
                           (match ty with
                           | Void -> []
                           | _ ->  [(Movq, [Reg Rax; res])])

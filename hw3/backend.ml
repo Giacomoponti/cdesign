@@ -124,35 +124,21 @@ let compile_operand (ctxt:ctxt) (dest:X86.operand) : Ll.operand -> ins =
    [ NOTE: Don't forget to preserve caller-save registers (only if
    needed). ]
 *)
+let arg_loc (n : int) : operand = 
+  match n with 
+  | 0 -> Reg Rdi
+  | 1 -> Reg Rsi
+  | 2 -> Reg Rdx
+  | 3 -> Reg Rcx 
+  | 4 -> Reg R08
+  | 5 -> Reg R09
+  | x -> Ind3 (Lit (Int64.mul (8L) (Int64.of_int (x-4))), Rbp) 
 
-
-(*let arg_reg : int -> (X86.operand) option = function
-  | 0 -> Some (Reg Rdi)
-  | 1 -> Some (Reg Rsi)
-  | 2 -> Some (Reg Rdx)
-  | 3 -> Some (Reg Rcx)
-  | 4 -> Some (Reg R08)
-  | 5 -> Some (Reg R09)
-  | n -> None
-DELETE THIS!*)
-
-  let arg_loc (n : int) : operand = 
-    match n with 
-    | 0 -> Reg Rdi
-    | 1 -> Reg Rsi
-    | 2 -> Reg Rdx
-    | 3 -> Reg Rcx 
-    | 4 -> Reg R08
-    | 5 -> Reg R09
-    | x -> Ind3 (Lit (Int64.mul (8L) (Int64.of_int (x-4))), Rbp) 
-
-
-  
 let compile_call (ctxt:ctxt) (func_op:Ll.operand) (args: (ty * Ll.operand) list) =
   let call_code, op = match func_op with
     | Gid g -> [], Imm (Lbl (Platform.mangle g))
-    | Id _ -> [compile_operand ctxt (Reg R10) func_op], (Reg R10)
-    | _ -> failwith "call function operand was not a local or global id"
+    | Id uid -> [compile_operand ctxt (Reg R10) (Id uid)], (Reg R10)
+    | _ -> failwith "Operand was not a local or global id"
   in
   let n = List.length args in 
   let ops = List.map snd args in 
@@ -210,16 +196,6 @@ let offset_type tdecls (ts:ty list) (n:int) : int * ty =
   done;
   (!counter, List.nth ts n)
 
-  (*
-  let rec loop ts n acc =
-    begin match (ts, n) with
-      | (u::_, 0) -> (acc, u)
-      | (u::us, n) -> loop us (n-1) (acc + (size_ty tdecls u))
-      | _ -> failwith "index_into encountered bogus index"
-    end
-  in loop ts n 0
-*)
-
 (* Generates code that computes a pointer value.  
 
    1. op must be of pointer type: t*
@@ -252,32 +228,26 @@ let helper (ty:ty) (path:Ll.operand list) (ctxt:ctxt) : ins list =
   let ref_output = ref [] in 
   while (List.length (!ref_path) <> 0) do 
     match (!ref_type, !ref_path) with 
-
     | (Struct ls1, Const n::ls2) ->
       let (offset, new_type) = offset_type ctxt.tdecls ls1 (Int64.to_int n) in
-        ref_output := List.append (!ref_output) [(Addq, [Imm (Lit (Int64.of_int offset)); Reg Rax])]; 
+        ref_output := List.append (!ref_output) [(Addq, [Imm (Lit (Int64.of_int offset)); Reg R10])]; 
         ref_type := new_type;
         ref_path := ls2
-
    | (Array(_, new_type), Const n::ls) ->
-      (* Statically calculate the offset *)
       let offset = (size_ty ctxt.tdecls new_type) * (Int64.to_int n) in
-        ref_output := List.append (!ref_output) [(Addq, [Imm (Lit (Int64.of_int offset)); Reg Rax])]; 
+        ref_output := List.append (!ref_output) [(Addq, [Imm (Lit (Int64.of_int offset)); Reg R10])]; 
         ref_type := new_type;
         ref_path := ls
-
    | (Array(_, new_type), offset_op::ls) ->
-        ref_output := List.append (!ref_output) ([(Movq, [Reg Rax; Reg Rcx])]
-                                  @ [compile_operand ctxt (Reg Rax) offset_op]
-                                  @  [(Imulq, [Imm (Lit (Int64.of_int(size_ty ctxt.tdecls new_type))); Reg Rax])] 
-                                  @ [(Addq, [Reg Rcx; Reg Rax])]);
+        ref_output := List.append (!ref_output) ([(Movq, [Reg R10; Reg R11])]
+                                  @ [compile_operand ctxt (Reg R10) offset_op]
+                                  @  [(Imulq, [Imm (Lit (Int64.of_int(size_ty ctxt.tdecls new_type))); Reg R10])] 
+                                  @ [(Addq, [Reg R11; Reg R10])]);
                                   ref_type := new_type;
                                   ref_path := ls        
    | (Namedt t, _) -> ref_type := (lookup ctxt.tdecls t)
-
-   | _ -> failwith "compile_gep encountered unsupported getelementptr data"
+   | _ -> failwith "invalid type"
   done;
-  (*print_int(List.length !code);*)
   !ref_output
 
 
@@ -285,41 +255,11 @@ let helper (ty:ty) (path:Ll.operand list) (ctxt:ctxt) : ins list =
 let compile_gep (ctxt:ctxt) (op : Ll.ty * Ll.operand) (path: Ll.operand list) : ins list =
   match op with 
   | (Ptr t, op) -> 
-    let code = [compile_operand ctxt (Reg Rax) (op)] in
+    let code = [compile_operand ctxt (Reg R10) (op)] in
     List.append (code) (helper (Array(0, t)) path ctxt) 
   | _  -> failwith "input must be a pointer!! "
   
-  (*let op_to_rax = compile_operand ctxt (Reg Rax) in
-  let rec loop ty path code =
-    match (ty, path) with
-    | (_, []) -> List.rev code
-
-    | (Struct ts, Const n::rest) ->
-       let (offset, u) = index_into ctxt.tdecls ts (Int64.to_int n) in
-       loop u rest @@ Asm.(Addq, [~$offset; ~%Rax])::code
-
-    | (Array(_, u), Const n::rest) ->
-       (* Statically calculate the offset *)
-       let offset = (size_ty ctxt.tdecls u) * (Int64.to_int n) in
-       loop u rest @@ Asm.(Addq, [~$offset; ~%Rax])::code
-
-    | (Array(_, u), offset_op::rest) ->
-       loop u rest @@
-       Asm.([ Addq, [~%Rcx; ~%Rax]
-           ; Imulq, [imm_of_int @@ size_ty ctxt.tdecls u; ~%Rax] ])
-       @ (op_to_rax offset_op) ::
-         Asm.(Movq, [~%Rax; ~%Rcx])
-         :: code
-
-    | (Namedt t, p) -> loop (List.assoc t ctxt.tdecls) p code
-
-    | _ -> failwith "compile_gep encountered unsupported getelementptr data" in
-
-  match op with
-  | (Ptr t, op) -> loop (Array(0, t)) path [op_to_rax op]
-  | _ -> failwith "compile_gep got incorrect parameters"
-*)
-
+  
 (* compiling instructions  -------------------------------------------------- *)
 
 (* The result of compiling a single LLVM instruction might be many x86
@@ -395,7 +335,7 @@ let compile_insn (ctxt:ctxt) ((uid:uid), (i:Ll.insn)) : X86.ins list =
                                         [(Movq, [Reg R11; Ind2 (R12)])] 
                             | Gid gid -> [compile_operand ctxt (Reg R11) op1] @ 
                                           [(Movq, [Reg R11; Ind3 (Lbl (Platform.mangle gid), Rip)])]
-                            | _ -> failwith "i dunno"
+                            | _ -> failwith "wrong destination!"
                             end
   | Icmp (cnd, ty, op1, op2) -> [compile_operand ctxt (Reg R11) op1]@
                                 [compile_operand ctxt (Reg R12) op2]@
@@ -410,76 +350,9 @@ let compile_insn (ctxt:ctxt) ((uid:uid), (i:Ll.insn)) : X86.ins list =
   | Bitcast (ty1, op, ty2) -> [compile_operand ctxt (Reg R11) op]@
                               [(Movq, [Reg R11; res])]
   | Gep (ty, op, ls) -> let code = compile_gep ctxt (ty, op) ls in
-                         code @ [(Movq, [Reg Rax; res])] 
+                         code @ [(Movq, [Reg R10; res])] 
   | _ -> []  
   end 
-
-(*let compile_insn (ctxt:ctxt) ((uid:uid), (i:Ll.insn)) : X86.ins list =
-  let op_to = compile_operand ctxt in 
-  let op_to_rax = op_to (Reg Rax) in (* Move the value of op into rax *)
-  let op_to_rcx = op_to (Reg Rcx) in (* Move the value of op into rax *)
-  let dst = lookup ctxt.layout uid in
-  match i with
-  | Binop (bop, t, op1, op2) ->
-    let bin op = 
-      (op_to_rax op1) :: 
-      (op_to_rcx op2) :: 
-      Asm.([ op, [~%Rcx; ~%Rax]
-          ; Movq, [~%Rax; dst] ])
-    in
-    begin match bop with
-     | Ll.Add ->  bin Addq
-     | Ll.Sub ->  bin Subq
-     | Ll.Mul ->  bin Imulq
-     | Ll.Shl ->  bin Shlq
-     | Ll.Lshr -> bin Shrq
-     | Ll.Ashr -> bin Sarq
-     | Ll.And ->  bin Andq
-     | Ll.Or ->   bin Orq
-     | Ll.Xor ->  bin Xorq
-    end
-
-  (* Alloca instructions allocate an fresh stack slot and 
-     move the address of the newly allocated storage into the
-     destination uid.   *)
-  | Alloca (_t) -> Asm.([ Pushq, [~$0]
-                       ; Movq, [~%Rsp; dst] ])
-
-  (* Load dereferences the pointer value stored in a local.
-     Global and constant pointers don't need indirection. *)
-  | Load (t, op) -> (op_to_rax op) :: Asm.([ Movq, [Ind2 Rax; ~%Rcx]
-                                          ; Movq, [~%Rcx; dst] ])
-
-  (* Store also needs to dereference the destination pointer if it's a global *)
-  | Store (_, src, (Id uid as dest)) ->
-    (op_to_rcx src) ::
-    (op_to_rax dest) :: Asm.([Movq, [~%Rcx; Ind2 Rax]])
-  | Store (_, src, Gid gid) ->
-    (op_to_rax src) :: Asm.([Movq, [~%Rax; Ind3 (Lbl (Platform.mangle gid), Rip)]])
-  | Store (_, _, _) -> failwith "store destination was not a local or global id"
-
-  (* Treat LL i1 values as words, so zero-out the rest of the bits *)
-  | Icmp (cnd, _, op1, op2) -> (op_to_rax op1) ::
-                               (op_to_rcx op2) ::
-                               Asm.([ Cmpq, [~%Rcx; ~%Rax]
-                                    ; (Set (compile_cnd cnd)), [dst]
-                                    ; Andq, [imm_of_int 1; dst] ])
-
-  | Call(ret_ty, fop, args) ->
-    let code = compile_call ctxt fop args in
-    code @
-    (match ret_ty with
-     | Void -> []
-     | _ ->  Asm.([Movq, [~%Rax; dst]]))
-
-  (* Bitcast is effectively just a Mov at the assembly level *)
-  | Bitcast (_, op, _) -> (op_to_rax op) :: Asm.([Movq, [~%Rax; dst]])
-
-  (* Defer to the helper function to compute the pointer value *)
-  | Gep (t, op, path) ->
-    let code = compile_gep ctxt (t, op) path in
-    code @ Asm.([ Movq, [~%Rax; dst] ]) *)
-
 
 (* compiling terminators  --------------------------------------------------- *)
 
@@ -512,20 +385,6 @@ let compile_terminator (fn:string) (ctxt:ctxt) (t:Ll.terminator) : ins list =
                           [(J Eq, [Imm (Lbl (mk_lbl fn l1))])] @ 
                           [(Jmp, [Imm (Lbl (mk_lbl fn l2))])]
 
-(*let compile_terminator (fn:string) (ctxt:ctxt) (t:Ll.terminator) : ins list =
-  let epilogue = Asm.([ Movq, [~%Rbp; ~%Rsp]
-                     ; Popq, [~%Rbp]
-                     ; Retq, []])
-  in match t with
-    | Ll.Ret (_, None) -> epilogue
-    | Ll.Ret (_, Some o) -> (compile_operand ctxt (Reg Rax) o) :: epilogue
-    | Ll.Br l -> Asm.([ Jmp, [~$$(mk_lbl fn l)] ])
-    | Ll.Cbr (o, l1, l2) -> (compile_operand ctxt (Reg Rax) o)
-                         :: Asm.([ Cmpq, [~$0; ~%Rax]
-                                ; J (X86.Neq) , [~$$(mk_lbl fn l1)]
-                                ; Jmp, [~$$(mk_lbl fn l2)]
-                                ])*)
-
 (* compiling blocks --------------------------------------------------------- *)
 
 let compile_block (fn:string) (ctxt:ctxt) (blk:Ll.block) : ins list =
@@ -547,8 +406,6 @@ let compile_lbl_block fn lbl ctxt blk : elem =
 
 
 (* compile_fdecl ------------------------------------------------------------ *)
-(*let rbp_offset n = Ind3 (Lit (Int64.of_int @@ 8 * n), Rbp) DELETE THIS*)
-
 (* This helper function computes the location of the nth incoming
    function argument: either in a register or relative to %rbp,
    according to the calling conventions.  You might find it useful for
@@ -556,7 +413,6 @@ let compile_lbl_block fn lbl ctxt blk : elem =
 
    [ NOTE: the first six arguments are numbered 0 .. 5 ]
 *)
-
 
 
 (* We suggest that you create a helper function that computes the 

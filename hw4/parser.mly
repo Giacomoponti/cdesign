@@ -92,7 +92,10 @@ let loc (startpos:Lexing.position) (endpos:Lexing.position) (elt:'a) : 'a node =
 %type <Ast.stmt Ast.node> stmt
 %type <Ast.block> block
 %type <Ast.ty> ty
+
+%token <Ast.ty> TARRAY
 %%
+
 
 exp_top:
   | e=exp EOF { e }
@@ -111,6 +114,7 @@ decl:
 
 arglist:
   | l=separated_list(COMMA, pair(ty,IDENT)) { l }
+    
     
 ty:
   | TINT   { TInt }
@@ -178,16 +182,18 @@ exp:
   | e=exp LPAREN es=separated_list(COMMA, exp) RPAREN
                         { loc $startpos $endpos @@ Call (e,es) }
   | LPAREN e=exp RPAREN { e } 
-  | NEW TINT LBRACKET e=exp RBRACKET 
-                        {loc $startpos $endpos @@ NewArr(TInt, e)}
-  | NEW TBOOL LBRACKET e=exp RBRACKET 
-                        {loc $startpos $endpos @@ NewArr(TBool, e)}
-  | NEW TINT LBRACKET RBRACKET LBRACE es=separated_list(COMMA, exp) RBRACE 
-                        {loc $startpos $endpos @@ CArr(TInt, es)}
-  | NEW TBOOL LBRACKET RBRACKET LBRACE es=separated_list(COMMA, exp) RBRACE 
-                        {loc $startpos $endpos @@ CArr(TBool, es)}
+  | NEW t=ty LBRACKET e=exp RBRACKET 
+                        {loc $startpos $endpos @@ NewArr(t, e)}
+  (*| NEW TBOOL LBRACKET e=exp RBRACKET 
+                        {loc $startpos $endpos @@ NewArr(TBool, e)}*)
   | NEW t=ty LBRACKET RBRACKET LBRACE es=separated_list(COMMA, exp) RBRACE 
                         {loc $startpos $endpos @@ CArr(t, es)}
+  (*| NEW TBOOL LBRACKET RBRACKET LBRACE es=separated_list(COMMA, exp) RBRACE 
+                        {loc $startpos $endpos @@ CArr(TBool, es)}
+  | NEW TINT LBRACKET RBRACKET LBRACKET RBRACKET LBRACE es=separated_list(COMMA, exp) RBRACE 
+                        {loc $startpos $endpos @@ CArr(TRef (RArray (TInt)), es)}
+  | NEW TSTRING LBRACKET RBRACKET LBRACKET RBRACKET LBRACE es=separated_list(COMMA, exp) RBRACE 
+                        {loc $startpos $endpos @@ CArr(TRef (RArray (TRef (RString))), es)}*)                   
 
 
 vdecl:

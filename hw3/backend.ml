@@ -22,12 +22,6 @@ let compile_cnd = function
   | Ll.Sgt -> X86.Gt
   | Ll.Sge -> X86.Ge
 
-let imm_of_int (n:int) = Imm (Lit (Int64.of_int n))
-
-(* Compute an indirect address that is a fixed byte offset from %rbp *)
-(*let rbp_offset (offset:int) : X86.operand =
-  let amt = Int64.of_int offset in
-  Ind3 (Lit amt, Rbp) DELETE THIS*)
 
 (* locals and layout -------------------------------------------------------- *)
 

@@ -365,9 +365,31 @@ let cmp_function_ctxt (c:Ctxt.t) (p:Ast.prog) : Ctxt.t =
    Only a small subset of OAT expressions can be used as global initializers
    in well-formed programs. (The constructors starting with C). 
 *)
-let cmp_global_ctxt (c:Ctxt.t) (p:Ast.prog) : Ctxt.t =
-  failwith "cmp_global_ctxt unimplemented"
+let helper (exp:Ast.exp) (id:id) : (Ll.ty * Ll.operand) = 
+  match exp with 
+  | CNull rty -> ((cmp_rty rty), Null)
+  | CBool b -> (I1, Gid id)  
+  | CInt i -> (I64, Const i)
+  | CStr s -> (I8, Gid id)
+  | CArr (t, xs) -> (Array (List.length(xs), cmp_ty t), Gid id)
+  | _ -> failwith "expression cannot be global initializer!"
 
+
+let cmp_global_ctxt (c:Ctxt.t) (p:Ast.prog) : Ctxt.t =
+  let rec loop (c:Ctxt.t) (p:Ast.prog) = 
+    begin match p with 
+      | [] -> c
+      | x::xs -> match x with 
+                | Gvdecl gdecl -> let id = gdecl.elt.name in
+                                    let init = gdecl.elt.init in 
+                                      let exp = init.elt in 
+                                       let bnd = helper exp id in 
+                                        Ctxt.add c id bnd;
+                                        loop c xs
+
+
+                | Gfdecl fdecl -> loop c xs
+  end in loop c p
 (* Compile a function declaration in global context c. Return the LLVMlite cfg
    and a list of global declarations containing the string literals appearing
    in the function.
@@ -396,8 +418,14 @@ let cmp_fdecl (c:Ctxt.t) (f:Ast.fdecl node) : Ll.fdecl * (Ll.gid * Ll.gdecl) lis
 *)
 
 let rec cmp_gexp c (e:Ast.exp node) : Ll.gdecl * (Ll.gid * Ll.gdecl) list =
-  failwith "cmp_gexp not implemented"
-
+  begin match e.elt with 
+  | CNull rty -> ((cmp_rty rty, GNull), [])  
+  (*| CBool b -> ()
+  | CInt i -> 
+  | CStr s -> 
+  | CArr ->*) 
+  | _ -> failwith "cannot appear as global initializer!"
+  end
 (* Oat internals function context ------------------------------------------- *)
 let internals = [
     "oat_alloc_array",         Ll.Fun ([I64], Ptr I64)

@@ -335,8 +335,12 @@ let rec cmp_exp (c:Ctxt.t) (exp:Ast.exp node) : Ll.ty * Ll.operand * stream =
  *)
 
 let rec cmp_stmt (c:Ctxt.t) (rt:Ll.ty) (stmt:Ast.stmt node) : Ctxt.t * stream =
-  failwith "cmp_stmt not implemented"
+  begin match stmt.elt with 
+  | Ret op_exp -> (*let exp = (Option.get (op_exp)).elt in*)
+  failwith "not implemented"
 
+  | _ -> failwith "not implemented"
+end
 (* Compile a series of statements *)
 and cmp_block (c:Ctxt.t) (rt:Ll.ty) (stmts:Ast.block) : Ctxt.t * stream =
   List.fold_left (fun (c, code) s -> 
@@ -365,14 +369,13 @@ let cmp_function_ctxt (c:Ctxt.t) (p:Ast.prog) : Ctxt.t =
    Only a small subset of OAT expressions can be used as global initializers
    in well-formed programs. (The constructors starting with C). 
 *)
-let helper (exp:Ast.exp) (id:id) : (Ll.ty * Ll.operand) = 
+let helper (exp:Ast.exp) : (Ll.ty)  = 
   match exp with 
-  | CNull rty -> ((cmp_rty rty), Null)
-  | CBool b -> (I1, Gid id)  
-  | CInt i -> (I64, Const i)
-  | CStr s -> (I8, Gid id)
-  | CArr (t, xs) -> (Array (List.length(xs), cmp_ty t), Gid id)
-  | _ -> failwith "expression cannot be global initializer!"
+  | CNull rty -> (cmp_rty rty)
+  | CBool b -> cmp_ty TBool  
+  | CInt i -> cmp_ty TInt
+  | CStr s -> cmp_ty (TRef (RString))
+  | _ -> failwith "expression cannot be global initializer (or array)!"
 
 
 let cmp_global_ctxt (c:Ctxt.t) (p:Ast.prog) : Ctxt.t =
@@ -380,15 +383,13 @@ let cmp_global_ctxt (c:Ctxt.t) (p:Ast.prog) : Ctxt.t =
     begin match p with 
       | [] -> c
       | x::xs -> match x with 
-                | Gvdecl gdecl -> let id = gdecl.elt.name in
-                                    let init = gdecl.elt.init in 
-                                      let exp = init.elt in 
-                                       let bnd = helper exp id in 
-                                        Ctxt.add c id bnd;
+                | Gvdecl { elt = {name; init}} -> let exp = init.elt in 
+                                       let ft = helper exp in 
+                                        let u = c = Ctxt.add c name (ft, (Gid name)) in
                                         loop c xs
 
 
-                | Gfdecl fdecl -> loop c xs
+                | _ -> loop c xs 
   end in loop c p
 (* Compile a function declaration in global context c. Return the LLVMlite cfg
    and a list of global declarations containing the string literals appearing
@@ -403,7 +404,11 @@ let cmp_global_ctxt (c:Ctxt.t) (p:Ast.prog) : Ctxt.t =
  *)
 
 let cmp_fdecl (c:Ctxt.t) (f:Ast.fdecl node) : Ll.fdecl * (Ll.gid * Ll.gdecl) list =
-  failwith "cmp_fdecl not implemented"
+  let f_ty = cmp_fty ((List.map fst f.elt.args), (f.elt.frtyp)) in 
+    let fname = f.elt.fname in 
+      let f_param = List.map snd f.elt.args in 
+        failwith "not implemented"
+
 
 (* Compile a global initializer, returning the resulting LLVMlite global
    declaration, and a list of additional global declarations.
@@ -420,11 +425,11 @@ let cmp_fdecl (c:Ctxt.t) (f:Ast.fdecl node) : Ll.fdecl * (Ll.gid * Ll.gdecl) lis
 let rec cmp_gexp c (e:Ast.exp node) : Ll.gdecl * (Ll.gid * Ll.gdecl) list =
   begin match e.elt with 
   | CNull rty -> ((cmp_rty rty, GNull), [])  
-  (*| CBool b -> ()
-  | CInt i -> 
-  | CStr s -> 
-  | CArr ->*) 
-  | _ -> failwith "cannot appear as global initializer!"
+  | CBool true -> (((cmp_ty TBool), GInt 1L), [])
+  | CBool false -> (((cmp_ty TBool), GInt 0L), [])
+  | CInt i -> (((cmp_ty TInt), GInt i), [])
+  | CStr s -> (((cmp_ty (TRef (RString))), GString s), [])
+  | _ -> failwith "cannot appear as global initializer! (or array)"
   end
 (* Oat internals function context ------------------------------------------- *)
 let internals = [

@@ -336,8 +336,10 @@ let rec cmp_exp (c:Ctxt.t) (exp:Ast.exp node) : Ll.ty * Ll.operand * stream =
 
 let rec cmp_stmt (c:Ctxt.t) (rt:Ll.ty) (stmt:Ast.stmt node) : Ctxt.t * stream =
   begin match stmt.elt with 
-  | Ret op_exp -> (*let exp = (Option.get (op_exp)).elt in*)
-  failwith "not implemented"
+  | Ret op_exp -> begin match op_exp with 
+                  | None -> failwith "None"
+                  | Some x -> let exp = x.elt in 
+                                
 
   | _ -> failwith "not implemented"
 end
@@ -407,7 +409,11 @@ let cmp_fdecl (c:Ctxt.t) (f:Ast.fdecl node) : Ll.fdecl * (Ll.gid * Ll.gdecl) lis
   let f_ty = cmp_fty ((List.map fst f.elt.args), (f.elt.frtyp)) in 
     let fname = f.elt.fname in 
       let f_param = List.map snd f.elt.args in 
-        failwith "not implemented"
+        let block = f.elt.body in 
+          let ret_type = cmp_ret_ty (f.elt.frtyp) in
+            let stream = snd (cmp_block c ret_type block) in 
+              let (f_cfg, ls) = cfg_of_stream(stream) in
+                ({f_ty; f_param; f_cfg}, ls)   
 
 
 (* Compile a global initializer, returning the resulting LLVMlite global

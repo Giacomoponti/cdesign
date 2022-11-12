@@ -407,7 +407,11 @@ let cmp_fdecl (c:Ctxt.t) (f:Ast.fdecl node) : Ll.fdecl * (Ll.gid * Ll.gdecl) lis
   let f_ty = cmp_fty ((List.map fst f.elt.args), (f.elt.frtyp)) in 
     let fname = f.elt.fname in 
       let f_param = List.map snd f.elt.args in 
-        failwith "not implemented"
+        let block = f.elt.body in 
+          let ret_type = cmp_ret_ty (f.elt.frtyp) in
+            let stream = snd (cmp_block c ret_type block) in 
+              let (f_cfg, ls) = cfg_of_stream(stream) in
+                ({f_ty; f_param; f_cfg}, ls)   
 
 
 (* Compile a global initializer, returning the resulting LLVMlite global

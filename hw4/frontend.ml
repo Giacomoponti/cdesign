@@ -303,10 +303,59 @@ let oat_alloc_array (t:Ast.ty) (size:Ll.operand) : Ll.ty * operand * stream =
      (CArr) and the (NewArr) expressions
 
 *)
+let cmp_bop (bop) : Ll.bop*Ll.ty = 
+  match bop with 
+  | Ast.Add -> Add, cmp_ty (TInt)
+  | Ast.Mul -> Mul, cmp_ty (TInt)
+  | Ast.Sub -> Sub, cmp_ty (TInt)
+  | Ast.And -> And, cmp_ty (TBool)
+  | Ast.IAnd -> And, cmp_ty (TInt) 
+  | Ast.IOr -> Or, cmp_ty (TInt)
+  | Ast.Or -> Or, cmp_ty (TBool)
+  | Ast.Shl -> Shl, cmp_ty (TInt)
+  | Ast.Shr -> Lshr, cmp_ty (TInt)
+  | Ast.Sar -> Ashr, cmp_ty (TInt)
+
+let cmp_cnd (cnd) : Ll.cnd* Ll.ty = 
+  match cnd with
+  |Eq -> Eq, cmp_ty (TBool)
+  |Neq -> Ne, cmp_ty (TBool)
+  |Lt -> Slt, cmp_ty (TBool)
+  |Lte -> Sle, cmp_ty (TBool)
+  |Gt -> Sgt, cmp_ty (TBool)
+  |Gte -> Sge, cmp_ty (TBool)
+
 
 let rec cmp_exp (c:Ctxt.t) (exp:Ast.exp node) : Ll.ty * Ll.operand * stream =
-  failwith "cmp_exp unimplemented"
-
+  begin match exp.elt with 
+  | CNull rty -> ((cmp_rty rty), Null, [])
+  | CInt i -> I64, Const i, []
+  | CBool b -> I1, Const (if b then 1L else 0L), []
+  | Bop (bop, exp1, exp2) -> let (t1, op1, s1) = cmp_exp c exp1 in 
+                              let (t2, op2, s2) = cmp_exp c exp2  in
+                                let id = gensym "bop" in 
+                                  begin match bop with 
+                                  | Ast.Add | Ast.Mul | Ast.Sub | Ast.Shl | Ast.Shr | Ast.Sar
+                                  | Ast.IAnd | Ast.IOr -> 
+                                    let ll_bop, ll_ty = cmp_bop bop in
+                                      ll_ty, Id id, s1 >@ s2 >:: I (id ,Binop (ll_bop, t1, op1, op2)) 
+                                  | Ast.Eq | Ast.Neq | Ast.Lt | Ast.Lte | Ast.Gt | Ast.Gte 
+                                  | Ast.And | Ast.Or -> 
+                                    let ll_cnd, ll_ty = cmp_cnd bop in
+                                      ll_ty, Id id, s1 >@ s2 >:: I (id ,Icmp (ll_cnd, t1, op1, op2))
+                                  end
+  | Uop (uop, exp) -> let (t, op, s) = cmp_exp c exp in 
+                        let id = gensym "uop" in 
+                          begin match uop with
+                          | Neg -> (t, Id id, s >:: I (id, Binop (Mul, t, op, Const (-1L))) )
+                          | Lognot -> (t, Id id, s >:: I (id, Icmp (Eq, t, op, Const (0L))))
+                          | Bitnot -> (t, Id id, s >:: I (id, Binop (Xor, t, op, Const (-1L))))
+                          end
+  | Id id -> let (Ptr ty, op)  = Ctxt.lookup id c in 
+              let new_id = gensym id in 
+                (ty, Id new_id, [I(new_id, Load (Ptr ty, op))])
+  | _ -> failwith "still to implement"
+end
 (* Compile a statement in context c with return typ rt. Return a new context, 
    possibly extended with new local bindings, and the instruction stream
    implementing the statement.
@@ -337,11 +386,32 @@ let rec cmp_exp (c:Ctxt.t) (exp:Ast.exp node) : Ll.ty * Ll.operand * stream =
 let rec cmp_stmt (c:Ctxt.t) (rt:Ll.ty) (stmt:Ast.stmt node) : Ctxt.t * stream =
   begin match stmt.elt with 
   | Ret op_exp -> begin match op_exp with 
-                  | None -> failwith "None"
-                  | Some x -> let exp = x.elt in 
-                                
-
-  | _ -> failwith "not implemented"
+                  | None -> (c, [T(Ret (Void, None))])
+                  | Some x -> let (ty, operand, stream) = cmp_exp c x in 
+                                (c, stream >@  [T(Ret (ty, Some operand))])
+                  end
+ | Decl (id, exp) -> let (ty, operand, stream) = cmp_exp c exp in 
+                        let new_id = gensym id in 
+                          let store_id = gensym id in 
+                            let decl = stream >:: E(new_id, Alloca ty) >:: I(store_id, Store (ty, operand, Id new_id)) in 
+                              (Ctxt.add c id (Ptr ty, Id new_id), decl)
+ | Assn (exp1, exp2) -> let (ty2, op2, s2) = cmp_exp c exp2 in 
+                        begin match exp1.elt with 
+                        | Id id -> let (ty, op) = Ctxt.lookup id c in 
+                          (c, s2 >:: I(gensym "ass", Store (ty2, op2 ,op)))
+                        | Index (exp3, exp4) -> let (ty3, op3, s3) = cmp_exp c exp3 in 
+                                                  let (ty4, op4, s4) = cmp_exp c exp4 in 
+                                                    (c, s4) 
+                        end 
+  | While (exp, body) -> let (ty, operand, stream) = cmp_exp c exp in
+    let cnd_name, body_name, pre, post = gensym "cnd", gensym "body", gensym "pre", gensym "post" in 
+      let body_s = snd (cmp_block c rt body) in 
+        let preloop = [T(Br pre); L (pre)] in 
+          let condition = stream @ [I(cnd_name, Icmp(Eq, I1, operand, Const 0L )); T(Cbr (Id cnd_name, post, body_name))] in 
+            let body = [L(body_name)] @ body_s in 
+              let post = [T(Br pre); L(post)] in 
+                c, (preloop >@ condition >@ body >@ post)
+  | _ -> (c,[T (Ret (Void, None))] )
 end
 (* Compile a series of statements *)
 and cmp_block (c:Ctxt.t) (rt:Ll.ty) (stmts:Ast.block) : Ctxt.t * stream =
@@ -373,7 +443,7 @@ let cmp_function_ctxt (c:Ctxt.t) (p:Ast.prog) : Ctxt.t =
 *)
 let helper (exp:Ast.exp) : (Ll.ty)  = 
   match exp with 
-  | CNull rty -> (cmp_rty rty)
+  | CNull rty -> Ptr(cmp_rty rty)
   | CBool b -> cmp_ty TBool  
   | CInt i -> cmp_ty TInt
   | CStr s -> cmp_ty (TRef (RString))
@@ -387,12 +457,11 @@ let cmp_global_ctxt (c:Ctxt.t) (p:Ast.prog) : Ctxt.t =
       | x::xs -> match x with 
                 | Gvdecl { elt = {name; init}} -> let exp = init.elt in 
                                        let ft = helper exp in 
-                                        let u = c = Ctxt.add c name (ft, (Gid name)) in
-                                        loop c xs
+                                        loop (Ctxt.add c name (Ptr(ft), (Gid name))) xs
 
 
                 | _ -> loop c xs 
-  end in loop c p
+  end in cmp_function_ctxt (loop c p) p
 (* Compile a function declaration in global context c. Return the LLVMlite cfg
    and a list of global declarations containing the string literals appearing
    in the function.
@@ -430,9 +499,8 @@ let cmp_fdecl (c:Ctxt.t) (f:Ast.fdecl node) : Ll.fdecl * (Ll.gid * Ll.gdecl) lis
 
 let rec cmp_gexp c (e:Ast.exp node) : Ll.gdecl * (Ll.gid * Ll.gdecl) list =
   begin match e.elt with 
-  | CNull rty -> ((cmp_rty rty, GNull), [])  
-  | CBool true -> (((cmp_ty TBool), GInt 1L), [])
-  | CBool false -> (((cmp_ty TBool), GInt 0L), [])
+  | CNull rty -> ((Ptr (cmp_rty rty), GNull), [])  
+  | CBool b -> (((cmp_ty TBool), if b then (GInt 1L) else (GInt 0L)), [])
   | CInt i -> (((cmp_ty TInt), GInt i), [])
   | CStr s -> (((cmp_ty (TRef (RString))), GString s), [])
   | _ -> failwith "cannot appear as global initializer! (or array)"

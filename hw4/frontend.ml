@@ -316,7 +316,7 @@ let cmp_bop (bop) : Ll.bop*Ll.ty =
   | Ast.Shr -> Lshr, cmp_ty (TInt)
   | Ast.Sar -> Ashr, cmp_ty (TInt)
 
-let cmp_cnd (cnd) : Ll.cnd* Ll.ty = 
+let cmp_cnd (cnd:Ast.binop) : Ll.cnd* Ll.ty = 
   match cnd with
   |Eq -> Eq, cmp_ty (TBool)
   |Neq -> Ne, cmp_ty (TBool)
@@ -335,12 +335,11 @@ let rec cmp_exp (c:Ctxt.t) (exp:Ast.exp node) : Ll.ty * Ll.operand * stream =
                               let (t2, op2, s2) = cmp_exp c exp2  in
                                 let id = gensym "bop" in 
                                   begin match bop with 
-                                  | Ast.Add | Ast.Mul | Ast.Sub | Ast.Shl | Ast.Shr | Ast.Sar
-                                  | Ast.IAnd | Ast.IOr -> 
+                                  | Add | Mul | Sub | Shl | Shr | Sar
+                                  | IAnd | IOr | And | Or -> 
                                     let ll_bop, ll_ty = cmp_bop bop in
                                       ll_ty, Id id, s1 >@ s2 >:: I (id ,Binop (ll_bop, t1, op1, op2)) 
-                                  | Ast.Eq | Ast.Neq | Ast.Lt | Ast.Lte | Ast.Gt | Ast.Gte 
-                                  | Ast.And | Ast.Or -> 
+                                  | Eq | Neq | Lt | Lte | Gt | Gte  -> 
                                     let ll_cnd, ll_ty = cmp_cnd bop in
                                       ll_ty, Id id, s1 >@ s2 >:: I (id ,Icmp (ll_cnd, t1, op1, op2))
                                   end
@@ -354,6 +353,47 @@ let rec cmp_exp (c:Ctxt.t) (exp:Ast.exp node) : Ll.ty * Ll.operand * stream =
   | Id id -> let (Ptr ty, op)  = Ctxt.lookup id c in 
               let new_id = gensym id in 
                 (ty, Id new_id, [I(new_id, Load (Ptr ty, op))])
+  | Call (exp1, exp_ls) -> let Id id = exp1.elt in 
+                            let (ty, operand) = Ctxt.lookup_function id c in 
+                              let Ptr(Fun(_, rt)) = ty in 
+                                let ls = ref [] in 
+                                  let s = ref [] in 
+                                    let u = (for i=0 to (List.length exp_ls)-1 do 
+                                      let (ty1, op1, s1) = cmp_exp c (List.nth exp_ls i) in 
+                                        ls := (ty1, op1) :: (!ls);
+                                        s := s1 @ (!s)
+                                    done) in  
+                                    let new_id = gensym "id" in 
+                                    (rt, Id new_id, (!s) >:: I(new_id, (Call (rt, operand, List.rev (!ls)))))
+  |(NewArr (ty, exp)) ->  let (ty1, op1, s1) = cmp_exp c exp in 
+    let (arr_ty, arr_op, s2) = oat_alloc_array ty op1 in 
+      (arr_ty, arr_op ,s1 >@ s2)
+  | (CArr (ty, exp_ls) ) -> let ls = ref [] in 
+                              let s = ref [] in 
+                                let len = List.length exp_ls in
+                                let u1 = (for i=0 to (len-1) do 
+                                  let (ty1, op1, s1) = cmp_exp c (List.nth exp_ls i) in 
+                                    ls := (ty1, op1) :: (!ls);
+                                    s := s1 @ (!s)
+                                done) in 
+                                let length = no_loc(CInt (Int64.of_int(len))) in 
+                                  let (ty2, op2, s2) = cmp_exp c (no_loc(NewArr (ty, length))) in 
+                                   let s3 = ref [] in 
+                                    let ls_ = List.rev (!ls) in 
+                                      let u2 = (for i=0 to (List.length (ls_))-1 do  
+                                        let (temp_ty, temp_op) = List.nth ls_ i in 
+                                          let gep_name = gensym "gep" in 
+                                            let store_name = gensym "store" in 
+                                           s3 := (!s3) >:: I(gep_name, Gep(ty2, op2, [Const 0L; Const 1L; Const (Int64.of_int i)])) 
+                                                       >:: I(store_name, Store (temp_ty, temp_op, Id gep_name))
+                                      done) in 
+                                      (ty2, op2, (!s) >@ s2 >@ (!s3))
+  |Index (exp1, exp2) -> let ptr_name = gensym "ptr" in
+                             let resptr_name = gensym "resPtr" in 
+                              let (ty1, op1, s1) =  cmp_exp c exp1 in 
+                                let (ty2, op2, s2) = cmp_exp c exp2 in
+                                  let Ptr(Struct [I64; Array(a,b)] ) = ty1 in 
+                                  (b, Id resptr_name, (s2 @ s1) >:: I(ptr_name, Gep(ty1, op1, [Const 0L; Const 1L; op2])) >:: I(resptr_name, Load(Ptr b, Id ptr_name)))
   | _ -> failwith "still to implement"
 end
 (* Compile a statement in context c with return typ rt. Return a new context, 
@@ -382,6 +422,11 @@ end
      pointer, you just need to store to it!
 
  *)
+(*let rec cmp_decls (vdecls:vdecl list) (c:Ctxt.t) (s:stream) : Ctxt.t * stream = 
+  begin match vdecls with
+  | [] -> c, s
+  | x::xs -> let (c1, s1) = cmp_stmt c Void (no_loc (Decl x)) in cmp_decls xs c2 (s >@ s1) 
+ end *)
 
 let rec cmp_stmt (c:Ctxt.t) (rt:Ll.ty) (stmt:Ast.stmt node) : Ctxt.t * stream =
   begin match stmt.elt with 
@@ -395,14 +440,28 @@ let rec cmp_stmt (c:Ctxt.t) (rt:Ll.ty) (stmt:Ast.stmt node) : Ctxt.t * stream =
                           let store_id = gensym id in 
                             let decl = stream >:: E(new_id, Alloca ty) >:: I(store_id, Store (ty, operand, Id new_id)) in 
                               (Ctxt.add c id (Ptr ty, Id new_id), decl)
+
  | Assn (exp1, exp2) -> let (ty2, op2, s2) = cmp_exp c exp2 in 
                         begin match exp1.elt with 
                         | Id id -> let (ty, op) = Ctxt.lookup id c in 
                           (c, s2 >:: I(gensym "ass", Store (ty2, op2 ,op)))
                         | Index (exp3, exp4) -> let (ty3, op3, s3) = cmp_exp c exp3 in 
                                                   let (ty4, op4, s4) = cmp_exp c exp4 in 
-                                                    (c, s4) 
+                                                    let ptr_name = gensym "ptr" in 
+                                                      (*let Ptr (Struct [I64; Array(a,b)]) = ty3 in*) 
+                                                      (c, (s4 @ s3 @ s2) >:: I(ptr_name, Gep( ty3, op3, [Const 0L; Const 1L; op4])) >:: I(gensym "store", Store(ty2, op2, Id ptr_name))) 
                         end 
+  
+  | If (exp, stmt1, stmt2) -> 
+      let (ty, operand, s) = cmp_exp c exp in 
+        let (cnd_name, if_name, else_name, after_name) = (gensym "cnd", gensym "if", gensym "else", gensym "after") in 
+          let (body1, body2) = ((snd (cmp_block c rt stmt1)), (snd (cmp_block c rt stmt2))) in 
+            let if_s = [L(if_name); T(Cbr (operand, if_name, else_name))] in 
+              let else_s = [L(else_name); T(Br after_name)] in 
+                let after = [L(after_name); T(Br after_name)] in 
+                  (c, s >@ if_s >@ body1 >@ else_s >@ body2 >@ after) 
+
+
   | While (exp, body) -> let (ty, operand, stream) = cmp_exp c exp in
     let cnd_name, body_name, pre, post = gensym "cnd", gensym "body", gensym "pre", gensym "post" in 
       let body_s = snd (cmp_block c rt body) in 
@@ -410,8 +469,30 @@ let rec cmp_stmt (c:Ctxt.t) (rt:Ll.ty) (stmt:Ast.stmt node) : Ctxt.t * stream =
           let condition = stream @ [I(cnd_name, Icmp(Eq, I1, operand, Const 0L )); T(Cbr (Id cnd_name, post, body_name))] in 
             let body = [L(body_name)] @ body_s in 
               let post = [T(Br pre); L(post)] in 
-                c, (preloop >@ condition >@ body >@ post)
-  | _ -> (c,[T (Ret (Void, None))] )
+                (c, (preloop >@ condition >@ body >@ post))
+
+  | For (vdecls, exp, stmt, body) -> 
+    let c1 = ref [] in 
+      let s1 = ref [] in 
+        let u = 
+          (for i=0 to (List.length (vdecls)-1) do
+          let (c_temp, s_temp) = cmp_stmt (!c1) (Void) (no_loc (Decl (List.nth vdecls i))) in 
+          c1 := c_temp;
+          s1 := s_temp @ (!s1);
+        done) in            
+          let cond = 
+            (begin match exp with 
+            | Some a -> a 
+            | None -> no_loc ((CInt 1L))
+          end)
+            in let (ctxt2, s2) = 
+              begin match stmt with 
+              | Some b -> cmp_stmt (!c1) rt (no_loc (While (cond, body @ [b])))
+              | None -> cmp_stmt (!c1) rt (no_loc (While (cond, body)))
+              end
+                in (ctxt2, s2 @ (!s1)) 
+  | SCall (exp1, exp2) ->let (_,_,s) = cmp_exp c (no_loc(Call (exp1, exp2)) ) in (c,s)
+  | _ -> (c,[T (Ret (Void, None))])
 end
 (* Compile a series of statements *)
 and cmp_block (c:Ctxt.t) (rt:Ll.ty) (stmts:Ast.block) : Ctxt.t * stream =

@@ -84,20 +84,20 @@ File "frontend.ml", line 320, characters 2-191:
 Warning 8: this pattern-matching is not exhaustive.
 Here is an example of a case that is not matched:
 (Add|Sub|Mul|And|Or|IAnd|IOr|Shl|Shr|Sar)
-File "frontend.ml", line 353, characters 17-29:
+File "frontend.ml", line 360, characters 18-30:
 Warning 8: this pattern-matching is not exhaustive.
 Here is an example of a case that is not matched:
 ((Void|I1|I8|I64|Struct _|Array (_, _)|Fun (_, _)|Namedt _), _)
-File "frontend.ml", line 356, characters 31-36:
+File "frontend.ml", line 363, characters 31-36:
 Warning 8: this pattern-matching is not exhaustive.
 Here is an example of a case that is not matched:
 (CNull _|CBool _|CInt _|CStr _|CArr (_, _))
-File "frontend.ml", line 358, characters 34-49:
+File "frontend.ml", line 365, characters 34-49:
 Warning 8: this pattern-matching is not exhaustive.
 Here is an example of a case that is not matched:
 (Ptr (Void|I1|I8|I64|Ptr _|Struct _|Array (_, _)|Namedt _)|Void|I1|I8|I64|
 Struct _|Array (_, _)|Fun (_, _)|Namedt _)
-File "frontend.ml", line 395, characters 38-68:
+File "frontend.ml", line 402, characters 38-68:
 Warning 8: this pattern-matching is not exhaustive.
 Here is an example of a case that is not matched:
 (Ptr (Struct (I64::Array (_, _)::_::_))|
@@ -107,23 +107,27 @@ Ptr
   (Struct ((Void|I1|I8|Ptr _|Struct _|Array (_, _)|Fun (_, _)|Namedt _)::_))|
 Ptr (Struct [])|Ptr (Void|I1|I8|I64|Ptr _|Array (_, _)|Fun (_, _)|Namedt _)|
 Void|I1|I8|I64|Struct _|Array (_, _)|Fun (_, _)|Namedt _)
-File "frontend.ml", line 445, characters 24-776:
+File "frontend.ml", line 453, characters 24-776:
 Warning 8: this pattern-matching is not exhaustive.
 Here is an example of a case that is not matched:
 (CNull _|CBool _|CInt _|CStr _|CArr (_, _)|NewArr (_, _)|Call (_, _)|
 Bop (_, _, _)|Uop (_, _))
-File "frontend.ml", line 361, characters 40-41:
+File "frontend.ml", line 368, characters 40-41:
 Warning 26: unused variable u.
-File "frontend.ml", line 374, characters 36-38:
+File "frontend.ml", line 381, characters 36-38:
 Warning 26: unused variable u1.
-File "frontend.ml", line 383, characters 42-44:
+File "frontend.ml", line 390, characters 42-44:
 Warning 26: unused variable u2.
-File "frontend.ml", line 477, characters 12-13:
-Warning 26: unused variable u.
-File "frontend.ml", line 495, characters 4-5:
+File "frontend.ml", line 404, characters 4-5:
 Warning 11: this match case is unused.
-File "frontend.ml", line 560, characters 8-13:
+File "frontend.ml", line 484, characters 12-13:
+Warning 26: unused variable u.
+File "frontend.ml", line 502, characters 4-5:
+Warning 11: this match case is unused.
+File "frontend.ml", line 583, characters 12-17:
 Warning 26: unused variable fname.
+File "frontend.ml", line 620, characters 38-39:
+Warning 26: unused variable u.
 # Target: gradedtests.ml.depends, tags: { extension:ml, file:gradedtests.ml, ocaml, ocamldep, quiet }
 /home/gponti/.opam/4.06.0/bin/ocamldep.opt -modules gradedtests.ml > gradedtests.ml.depends # cached
 # Target: driver.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:driver.cmo, file:driver.ml, implem, ocaml, quiet }
@@ -187,20 +191,20 @@ File "frontend.ml", line 320, characters 2-191:
 Warning 8: this pattern-matching is not exhaustive.
 Here is an example of a case that is not matched:
 (Add|Sub|Mul|And|Or|IAnd|IOr|Shl|Shr|Sar)
-File "frontend.ml", line 353, characters 17-29:
+File "frontend.ml", line 360, characters 18-30:
 Warning 8: this pattern-matching is not exhaustive.
 Here is an example of a case that is not matched:
 ((Void|I1|I8|I64|Struct _|Array (_, _)|Fun (_, _)|Namedt _), _)
-File "frontend.ml", line 356, characters 31-36:
+File "frontend.ml", line 363, characters 31-36:
 Warning 8: this pattern-matching is not exhaustive.
 Here is an example of a case that is not matched:
 (CNull _|CBool _|CInt _|CStr _|CArr (_, _))
-File "frontend.ml", line 358, characters 34-49:
+File "frontend.ml", line 365, characters 34-49:
 Warning 8: this pattern-matching is not exhaustive.
 Here is an example of a case that is not matched:
 (Ptr (Void|I1|I8|I64|Ptr _|Struct _|Array (_, _)|Namedt _)|Void|I1|I8|I64|
 Struct _|Array (_, _)|Fun (_, _)|Namedt _)
-File "frontend.ml", line 395, characters 38-68:
+File "frontend.ml", line 402, characters 38-68:
 Warning 8: this pattern-matching is not exhaustive.
 Here is an example of a case that is not matched:
 (Ptr (Struct (I64::Array (_, _)::_::_))|
@@ -210,23 +214,27 @@ Ptr
   (Struct ((Void|I1|I8|Ptr _|Struct _|Array (_, _)|Fun (_, _)|Namedt _)::_))|
 Ptr (Struct [])|Ptr (Void|I1|I8|I64|Ptr _|Array (_, _)|Fun (_, _)|Namedt _)|
 Void|I1|I8|I64|Struct _|Array (_, _)|Fun (_, _)|Namedt _)
-File "frontend.ml", line 445, characters 24-776:
+File "frontend.ml", line 453, characters 24-776:
 Warning 8: this pattern-matching is not exhaustive.
 Here is an example of a case that is not matched:
 (CNull _|CBool _|CInt _|CStr _|CArr (_, _)|NewArr (_, _)|Call (_, _)|
 Bop (_, _, _)|Uop (_, _))
-File "frontend.ml", line 361, characters 40-41:
+File "frontend.ml", line 368, characters 40-41:
 Warning 26: unused variable u.
-File "frontend.ml", line 374, characters 36-38:
+File "frontend.ml", line 381, characters 36-38:
 Warning 26: unused variable u1.
-File "frontend.ml", line 383, characters 42-44:
+File "frontend.ml", line 390, characters 42-44:
 Warning 26: unused variable u2.
-File "frontend.ml", line 477, characters 12-13:
-Warning 26: unused variable u.
-File "frontend.ml", line 495, characters 4-5:
+File "frontend.ml", line 404, characters 4-5:
 Warning 11: this match case is unused.
-File "frontend.ml", line 560, characters 8-13:
+File "frontend.ml", line 484, characters 12-13:
+Warning 26: unused variable u.
+File "frontend.ml", line 502, characters 4-5:
+Warning 11: this match case is unused.
+File "frontend.ml", line 583, characters 12-17:
 Warning 26: unused variable fname.
+File "frontend.ml", line 620, characters 38-39:
+Warning 26: unused variable u.
 # Target: driver.cmx, tags: { compile, extension:cmx, extension:ml, file:driver.cmx, file:driver.ml, implem, native, ocaml, quiet }
 /home/gponti/.opam/4.06.0/bin/ocamlopt.opt -c -I /home/gponti/.opam/4.06.0/lib/num -I /home/gponti/.opam/4.06.0/lib/ocaml -I ll -I util -I x86 -o driver.cmx driver.ml
 # Target: progasts.cmx, tags: { compile, extension:cmx, extension:ml, file:progasts.cmx, file:progasts.ml, implem, native, ocaml, quiet }

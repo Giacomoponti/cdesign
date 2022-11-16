@@ -1,11 +1,18 @@
-; generated from: oatprograms/lib15.oat
+; generated from: oatprograms/run8.oat
 target triple = "x86_64-unknown-linux"
-define i8* @sub(i8* %str, i64 %start, i64 %len) {
-  ret void
-}
-
 define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  ret void
+  %_arr782 = alloca { i64, [0 x i64] }*
+  %_raw_array776 = call i64* @oat_alloc_array(i64 2)
+  %_array777 = bitcast i64* %_raw_array776 to { i64, [0 x i64] }*
+  %_gep778 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array777, i32 0, i32 1, i32 0
+  store i64 1, i64* %_gep778
+  %_gep780 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array777, i32 0, i32 1, i32 1
+  store i64 2, i64* %_gep780
+  store { i64, [0 x i64] }* %_array777, { i64, [0 x i64] }** %_arr782
+  %_arr786 = load { i64, [0 x i64] }*, { i64, [0 x i64] }** %_arr782
+  %_ptr784 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_arr786, i32 0, i32 1, i32 1
+  %_resPtr785 = load i64, i64* %_ptr784
+  ret i64 %_resPtr785
 }
 
 

@@ -1,15 +1,24 @@
-; generated from: oatprograms/msort2.oat
+; generated from: oatprograms/run20.oat
 target triple = "x86_64-unknown-linux"
+define i64 @f() {
+  ret i64 19
+}
+
 define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  ret void
-}
-
-define void @oat_mergesort({ i64, [0 x i64] }* %a, i64 %low, i64 %high) {
-  ret void
-}
-
-define void @merge({ i64, [0 x i64] }* %a, i64 %low, i64 %high, i64 %mid) {
-  ret void
+  %_a1250 = alloca { i64, [0 x i64] }*
+  %_raw_array1242 = call i64* @oat_alloc_array(i64 3)
+  %_array1243 = bitcast i64* %_raw_array1242 to { i64, [0 x i64] }*
+  %_gep1244 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1243, i32 0, i32 1, i32 0
+  store i64 1, i64* %_gep1244
+  %_gep1246 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1243, i32 0, i32 1, i32 1
+  store i64 100, i64* %_gep1246
+  %_gep1248 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1243, i32 0, i32 1, i32 2
+  store i64 19, i64* %_gep1248
+  store { i64, [0 x i64] }* %_array1243, { i64, [0 x i64] }** %_a1250
+  %_a1254 = load { i64, [0 x i64] }*, { i64, [0 x i64] }** %_a1250
+  %_ptr1252 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_a1254, i32 0, i32 1, i32 2
+  %_resPtr1253 = load i64, i64* %_ptr1252
+  ret i64 %_resPtr1253
 }
 
 

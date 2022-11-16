@@ -1,11 +1,9 @@
-; generated from: oatprograms/binary_gcd.oat
+; generated from: oatprograms/globals3.oat
 target triple = "x86_64-unknown-linux"
-define i64 @binary_gcd(i64 %x, i64 %y) {
-  ret void
-}
+@arr = global { i64, [0 x i64] }* null
 
-define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  ret void
+define i64 @program(i64 %argc, { i64, [0 x i8*] }* %args) {
+  ret i64 17
 }
 
 

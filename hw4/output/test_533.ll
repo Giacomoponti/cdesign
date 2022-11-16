@@ -1,20 +1,23 @@
-; generated from: oatprograms/run29.oat
+; generated from: oatprograms/run22.oat
 target triple = "x86_64-unknown-linux"
-@b = global i1 1
-
 define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  %_i117 = alloca i64
-  store i64 0, i64* %_i117
-  %_b119 = load i1, i1* @b
-  br i1 %_b119, label %_if122, label %_else121
-_if122:
-  store i64 1, i64* %_i117
-  br label %_after120
-_else121:
-  br label %_after120
-_after120:
-  %_i125 = load i64, i64* %_i117
-  ret i64 %_i125
+  %_strs1917 = alloca { i64, [0 x i8*] }*
+  %_argc1906 = alloca i64
+  %_argv1908 = alloca { i64, [0 x i8*] }*
+  store { i64, [0 x i8*] }* %argv, { i64, [0 x i8*] }** %_argv1908
+  store i64 %argc, i64* %_argc1906
+  %_raw_array1911 = call i64* @oat_alloc_array(i64 2)
+  %_array1912 = bitcast i64* %_raw_array1911 to { i64, [0 x i8*] }*
+  %_gep1913 = getelementptr { i64, [0 x i8*] }, { i64, [0 x i8*] }* %_array1912, i32 0, i32 1, i32 0
+  store void null, void* %_gep1913
+  %_gep1915 = getelementptr { i64, [0 x i8*] }, { i64, [0 x i8*] }* %_array1912, i32 0, i32 1, i32 1
+  store void null, void* %_gep1915
+  store { i64, [0 x i8*] }* %_array1912, { i64, [0 x i8*] }** %_strs1917
+  %_strs1921 = load { i64, [0 x i8*] }*, { i64, [0 x i8*] }** %_strs1917
+  %_ptr1919 = getelementptr { i64, [0 x i8*] }, { i64, [0 x i8*] }* %_strs1921, i32 0, i32 1, i32 0
+  %_resPtr1920 = load i8*, i8** %_ptr1919
+  call void @print_string(i8* %_resPtr1920)
+  ret i64 0
 }
 
 

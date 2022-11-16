@@ -1,11 +1,8 @@
-; generated from: oatprograms/binary_gcd.oat
+; generated from: oatprograms/easyrun2.oat
 target triple = "x86_64-unknown-linux"
-define i64 @binary_gcd(i64 %x, i64 %y) {
-  ret void
-}
-
 define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  ret void
+  %_bop1 = add i64 17, 18
+  ret i64 %_bop1
 }
 
 

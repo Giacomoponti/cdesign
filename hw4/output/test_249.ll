@@ -1,9 +1,7 @@
-; generated from: oatprograms/globals5.oat
+; generated from: oatprograms/run26.oat
 target triple = "x86_64-unknown-linux"
-@s = global i8* c"hello!\00"
-
-define i64 @program(i64 %argc, { i64, [0 x i8*] }* %args) {
-  ret i64 17
+define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
+  ret i64 0
 }
 
 

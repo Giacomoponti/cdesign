@@ -1,11 +1,28 @@
-; generated from: oatprograms/run60.oat
+; generated from: oatprograms/run20.oat
 target triple = "x86_64-unknown-linux"
-@i = global i64 3
+define i64 @f() {
+  ret i64 19
+}
 
 define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  store i64 42, i64* @i
-  %_i78 = load i64, i64* @i
-  ret i64 %_i78
+  %_a1900 = alloca { i64, [0 x i64] }*
+  %_argc1887 = alloca i64
+  %_argv1889 = alloca { i64, [0 x i8*] }*
+  store { i64, [0 x i8*] }* %argv, { i64, [0 x i8*] }** %_argv1889
+  store i64 %argc, i64* %_argc1887
+  %_raw_array1892 = call i64* @oat_alloc_array(i64 3)
+  %_array1893 = bitcast i64* %_raw_array1892 to { i64, [0 x i64] }*
+  %_gep1894 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1893, i32 0, i32 1, i32 0
+  store i64 1, i64* %_gep1894
+  %_gep1896 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1893, i32 0, i32 1, i32 1
+  store i64 100, i64* %_gep1896
+  %_gep1898 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1893, i32 0, i32 1, i32 2
+  store i64 19, i64* %_gep1898
+  store { i64, [0 x i64] }* %_array1893, { i64, [0 x i64] }** %_a1900
+  %_a1904 = load { i64, [0 x i64] }*, { i64, [0 x i64] }** %_a1900
+  %_ptr1902 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_a1904, i32 0, i32 1, i32 2
+  %_resPtr1903 = load i64, i64* %_ptr1902
+  ret i64 %_resPtr1903
 }
 
 

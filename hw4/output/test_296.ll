@@ -1,7 +1,17 @@
-; generated from: oatprograms/easyrun1.oat
+; generated from: oatprograms/path3.oat
 target triple = "x86_64-unknown-linux"
-define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  ret i64 17
+@arr = global { i64, [0 x i64] }* bitcast ({ i64, [4 x i64] }* @_arr305 to { i64, [0 x i64] }*)
+@_arr305 = global { i64, [4 x i64] } { i64 4, [4 x i64] [ i64 4, i64 3, i64 2, i64 1 ] }
+
+define i64 @program(i64 %argc, { i64, [0 x i8*] }* %args) {
+  store i64 %argc, i64* %_argc297
+  store { i64, [0 x i8*] }* %args, { i64, [0 x i8*] }** %_args299
+  %_args299 = alloca { i64, [0 x i8*] }*
+  %_argc297 = alloca i64
+  %_arr304 = load { i64, [0 x i64] }*, { i64, [0 x i64] }** @arr
+  %_ptr302 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_arr304, i32 0, i32 1, i32 2
+  %_resPtr303 = load i64, i64* %_ptr302
+  ret i64 %_resPtr303
 }
 
 

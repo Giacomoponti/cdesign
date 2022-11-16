@@ -1,52 +1,12 @@
-; generated from: oatprograms/run38.oat
+; generated from: oatprograms/run50.oat
 target triple = "x86_64-unknown-linux"
-define i64 @f1() {
-  %_id431 = call i64 @f2()
-  ret i64 %_id431
-}
-
-define i64 @f2() {
-  %_id430 = call i64 @f3()
-  ret i64 %_id430
-}
-
-define i64 @f3() {
-  %_id429 = call i64 @f4()
-  ret i64 %_id429
-}
-
-define i64 @f4() {
-  %_id428 = call i64 @f5()
-  ret i64 %_id428
-}
-
-define i64 @f5() {
-  %_id427 = call i64 @f6()
-  ret i64 %_id427
-}
-
-define i64 @f6() {
-  %_id426 = call i64 @f7()
-  ret i64 %_id426
-}
-
-define i64 @f7() {
-  %_id425 = call i64 @f8()
-  ret i64 %_id425
-}
-
-define i64 @f8() {
-  %_id424 = call i64 @f9()
-  ret i64 %_id424
-}
-
-define i64 @f9() {
-  ret i64 31
-}
-
 define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  %_id423 = call i64 @f1()
-  ret i64 %_id423
+  %_argc1111 = alloca i64
+  %_argv1113 = alloca { i64, [0 x i8*] }*
+  store { i64, [0 x i8*] }* %argv, { i64, [0 x i8*] }** %_argv1113
+  store i64 %argc, i64* %_argc1111
+  call void @print_string(void null)
+  ret i64 0
 }
 
 

@@ -1,52 +1,14 @@
-; generated from: oatprograms/run38.oat
+; generated from: oatprograms/globals4.oat
 target triple = "x86_64-unknown-linux"
-define i64 @f1() {
-  %_id150 = call i64 @f2()
-  ret i64 %_id150
-}
+@arr = global { i64, [0 x i64] }* bitcast ({ i64, [4 x i64] }* @_arr241 to { i64, [0 x i64] }*)
+@_arr241 = global { i64, [4 x i64] } { i64 4, [4 x i64] [ i64 4, i64 3, i64 2, i64 1 ] }
 
-define i64 @f2() {
-  %_id149 = call i64 @f3()
-  ret i64 %_id149
-}
-
-define i64 @f3() {
-  %_id148 = call i64 @f4()
-  ret i64 %_id148
-}
-
-define i64 @f4() {
-  %_id147 = call i64 @f5()
-  ret i64 %_id147
-}
-
-define i64 @f5() {
-  %_id146 = call i64 @f6()
-  ret i64 %_id146
-}
-
-define i64 @f6() {
-  %_id145 = call i64 @f7()
-  ret i64 %_id145
-}
-
-define i64 @f7() {
-  %_id144 = call i64 @f8()
-  ret i64 %_id144
-}
-
-define i64 @f8() {
-  %_id143 = call i64 @f9()
-  ret i64 %_id143
-}
-
-define i64 @f9() {
-  ret i64 31
-}
-
-define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  %_id142 = call i64 @f1()
-  ret i64 %_id142
+define i64 @program(i64 %argc, { i64, [0 x i8*] }* %args) {
+  %_argc236 = alloca i64
+  %_args238 = alloca { i64, [0 x i8*] }*
+  store { i64, [0 x i8*] }* %args, { i64, [0 x i8*] }** %_args238
+  store i64 %argc, i64* %_argc236
+  ret i64 5
 }
 
 

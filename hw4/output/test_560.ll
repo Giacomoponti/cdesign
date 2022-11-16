@@ -1,24 +1,14 @@
-; generated from: oatprograms/run40.oat
+; generated from: oatprograms/globals5.oat
 target triple = "x86_64-unknown-linux"
-@i = global i64 8
+@s = global i8* bitcast ([7 x i8]* @_hello!248 to i8*)
+@_hello!248 = global [7 x i8] c"hello!\00"
 
-define i64 @f() {
-  %_j153 = alloca i64
-  store i64 0, i64* %_j153
-  %_id155 = call i64 @g()
-  store i64 %_id155, i64* %_j153
-  %_j157 = load i64, i64* %_j153
-  ret i64 %_j157
-}
-
-define i64 @g() {
-  %_i152 = load i64, i64* @i
-  ret i64 %_i152
-}
-
-define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  %_id151 = call i64 @f()
-  ret i64 %_id151
+define i64 @program(i64 %argc, { i64, [0 x i8*] }* %args) {
+  %_argc243 = alloca i64
+  %_args245 = alloca { i64, [0 x i8*] }*
+  store { i64, [0 x i8*] }* %args, { i64, [0 x i8*] }** %_args245
+  store i64 %argc, i64* %_argc243
+  ret i64 17
 }
 
 

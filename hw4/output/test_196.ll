@@ -1,15 +1,10 @@
-; generated from: oatprograms/insertion_sort.oat
+; generated from: oatprograms/path1.oat
 target triple = "x86_64-unknown-linux"
-define { i64, [0 x i64] }* @insert({ i64, [0 x i64] }* %partial, i64 %len, i64 %insertee) {
-  ret void
-}
-
-define { i64, [0 x i64] }* @insort({ i64, [0 x i64] }* %unsorted, i64 %len) {
-  ret void
-}
-
 define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  ret void
+  %_x172 = alloca i64
+  store i64 17, i64* %_x172
+  %_x174 = load i64, i64* %_x172
+  ret i64 %_x174
 }
 
 

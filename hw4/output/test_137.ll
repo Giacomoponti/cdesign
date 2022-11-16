@@ -1,7 +1,34 @@
-; generated from: oatprograms/run49.oat
+; generated from: oatprograms/lib14.oat
 target triple = "x86_64-unknown-linux"
 define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  ret void
+  %_a1581 = alloca { i64, [0 x i64] }*
+  %_raw_array1559 = call i64* @oat_alloc_array(i64 10)
+  %_array1560 = bitcast i64* %_raw_array1559 to { i64, [0 x i64] }*
+  %_gep1561 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1560, i32 0, i32 1, i32 0
+  store i64 126, i64* %_gep1561
+  %_gep1563 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1560, i32 0, i32 1, i32 1
+  store i64 125, i64* %_gep1563
+  %_gep1565 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1560, i32 0, i32 1, i32 2
+  store i64 124, i64* %_gep1565
+  %_gep1567 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1560, i32 0, i32 1, i32 3
+  store i64 123, i64* %_gep1567
+  %_gep1569 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1560, i32 0, i32 1, i32 4
+  store i64 122, i64* %_gep1569
+  %_gep1571 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1560, i32 0, i32 1, i32 5
+  store i64 121, i64* %_gep1571
+  %_gep1573 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1560, i32 0, i32 1, i32 6
+  store i64 120, i64* %_gep1573
+  %_gep1575 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1560, i32 0, i32 1, i32 7
+  store i64 119, i64* %_gep1575
+  %_gep1577 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1560, i32 0, i32 1, i32 8
+  store i64 118, i64* %_gep1577
+  %_gep1579 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1560, i32 0, i32 1, i32 9
+  store i64 117, i64* %_gep1579
+  store { i64, [0 x i64] }* %_array1560, { i64, [0 x i64] }** %_a1581
+  %_a1583 = load { i64, [0 x i64] }*, { i64, [0 x i64] }** %_a1581
+  %_id1584 = call i8* @string_of_array({ i64, [0 x i64] }* %_a1583)
+  call void @print_string(i8* %_id1584)
+  ret i64 0
 }
 
 

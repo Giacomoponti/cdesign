@@ -1,9 +1,28 @@
-; generated from: oatprograms/run45.oat
+; generated from: oatprograms/run40.oat
 target triple = "x86_64-unknown-linux"
-@a = global { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x i8*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }* null
+@i = global i64 8
+
+define i64 @f() {
+  %_j833 = alloca i64
+  store i64 0, i64* %_j833
+  %_id835 = call i64 @g()
+  store i64 %_id835, i64* %_j833
+  %_j837 = load i64, i64* %_j833
+  ret i64 %_j837
+}
+
+define i64 @g() {
+  %_i832 = load i64, i64* @i
+  ret i64 %_i832
+}
 
 define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  ret void
+  %_argc826 = alloca i64
+  %_argv828 = alloca { i64, [0 x i8*] }*
+  store { i64, [0 x i8*] }* %argv, { i64, [0 x i8*] }** %_argv828
+  store i64 %argc, i64* %_argc826
+  %_id831 = call i64 @f()
+  ret i64 %_id831
 }
 
 

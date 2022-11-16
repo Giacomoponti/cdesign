@@ -1,17 +1,18 @@
-; generated from: oatprograms/life.oat
+; generated from: oatprograms/path2.oat
 target triple = "x86_64-unknown-linux"
-@len = global i64 4
-
-define i64 @check({ i64, [0 x { i64, [0 x i64] }*] }* %board, i64 %i, i64 %j, i64 %count) {
-  ret void
-}
-
-define i64 @val_at({ i64, [0 x { i64, [0 x i64] }*] }* %board, i64 %i, i64 %j) {
-  ret void
-}
-
 define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  ret void
+  %_x289 = alloca i64
+  %_y291 = alloca i64
+  store i64 %argc, i64* %_argc284
+  store { i64, [0 x i8*] }* %argv, { i64, [0 x i8*] }** %_argv286
+  %_argv286 = alloca { i64, [0 x i8*] }*
+  %_argc284 = alloca i64
+  store i64 17, i64* %_x289
+  store i64 18, i64* %_y291
+  %_x293 = load i64, i64* %_x289
+  %_y294 = load i64, i64* %_y291
+  %_bop295 = add i64 %_x293, %_y294
+  ret i64 %_bop295
 }
 
 

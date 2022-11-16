@@ -1,24 +1,19 @@
-; generated from: oatprograms/run28.oat
+; generated from: oatprograms/easyrun7.oat
 target triple = "x86_64-unknown-linux"
 define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  %_i100 = alloca i64
-  %_j105 = alloca i64
-  store i64 9, i64* %_i100
-  %_i102 = load i64, i64* %_i100
-  %_i103 = load i64, i64* %_i100
-  %_bop104 = add i64 %_i102, %_i103
-  store i64 %_bop104, i64* %_j105
-  %_i107 = load i64, i64* %_i100
-  %_i108 = load i64, i64* %_i100
-  %_i109 = load i64, i64* %_i100
-  %_bop110 = mul i64 %_i108, %_i109
-  %_bop111 = add i64 %_i107, %_bop110
-  %_j112 = load i64, i64* %_j105
-  %_bop113 = sub i64 %_bop111, %_j112
-  %_bop114 = lshr i64 %_bop113, 2
-  %_bop115 = shl i64 %_bop114, 2
-  %_bop116 = ashr i64 %_bop115, 2
-  ret i64 %_bop116
+  %_argc102 = alloca i64
+  %_argv104 = alloca { i64, [0 x i8*] }*
+  store { i64, [0 x i8*] }* %argv, { i64, [0 x i8*] }** %_argv104
+  store i64 %argc, i64* %_argc102
+  %_uop107 = xor i64 5, -1
+  %_bop108 = and i64 %_uop107, 6
+  %_bop109 = or i64 2, 0
+  %_bop110 = icmp sge i64 %_bop108, %_bop109
+  br i1 %_bop110, label %_if113, label %_else112
+_if113:
+  ret i64 23
+_else112:
+  ret i64 46
 }
 
 

@@ -1,24 +1,24 @@
-; generated from: oatprograms/run20.oat
+; generated from: oatprograms/run18.oat
 target triple = "x86_64-unknown-linux"
-define i64 @f() {
-  ret i64 19
-}
-
 define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  %_a1208 = alloca { i64, [0 x i64] }*
-  %_raw_array1200 = call i64* @oat_alloc_array(i64 3)
-  %_array1201 = bitcast i64* %_raw_array1200 to { i64, [0 x i64] }*
-  %_gep1202 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1201, i32 0, i32 1, i32 0
-  store i64 1, i64* %_gep1202
-  %_gep1204 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1201, i32 0, i32 1, i32 1
-  store i64 100, i64* %_gep1204
-  %_gep1206 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1201, i32 0, i32 1, i32 2
-  store i64 19, i64* %_gep1206
-  store { i64, [0 x i64] }* %_array1201, { i64, [0 x i64] }** %_a1208
-  %_a1212 = load { i64, [0 x i64] }*, { i64, [0 x i64] }** %_a1208
-  %_ptr1210 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_a1212, i32 0, i32 1, i32 2
-  %_resPtr1211 = load i64, i64* %_ptr1210
-  ret i64 %_resPtr1211
+  %_a2058 = alloca { i64, [0 x i64] }*
+  %_argc2045 = alloca i64
+  %_argv2047 = alloca { i64, [0 x i8*] }*
+  store { i64, [0 x i8*] }* %argv, { i64, [0 x i8*] }** %_argv2047
+  store i64 %argc, i64* %_argc2045
+  %_raw_array2050 = call i64* @oat_alloc_array(i64 3)
+  %_array2051 = bitcast i64* %_raw_array2050 to { i64, [0 x i64] }*
+  %_gep2052 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array2051, i32 0, i32 1, i32 0
+  store i64 1, i64* %_gep2052
+  %_gep2054 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array2051, i32 0, i32 1, i32 1
+  store i64 100, i64* %_gep2054
+  %_gep2056 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array2051, i32 0, i32 1, i32 2
+  store i64 999, i64* %_gep2056
+  store { i64, [0 x i64] }* %_array2051, { i64, [0 x i64] }** %_a2058
+  %_a2062 = load { i64, [0 x i64] }*, { i64, [0 x i64] }** %_a2058
+  %_ptr2060 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_a2062, i32 0, i32 1, i32 2
+  %_resPtr2061 = load i64, i64* %_ptr2060
+  ret i64 %_resPtr2061
 }
 
 

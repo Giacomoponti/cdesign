@@ -1,23 +1,23 @@
-; generated from: oatprograms/matrixmult.oat
+; generated from: oatprograms/run25.oat
 target triple = "x86_64-unknown-linux"
 define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  ret void
-}
-
-define void @matrix_Mult({ i64, [0 x { i64, [0 x i64] }*] }* %a1, { i64, [0 x { i64, [0 x i64] }*] }* %a2, { i64, [0 x { i64, [0 x i64] }*] }* %a3) {
-  ret void
-}
-
-define void @matrix_MultAlt({ i64, [0 x { i64, [0 x i64] }*] }* %a1, { i64, [0 x { i64, [0 x i64] }*] }* %a2, { i64, [0 x { i64, [0 x i64] }*] }* %a3) {
-  ret void
-}
-
-define i64 @dot3({ i64, [0 x { i64, [0 x i64] }*] }* %a1, { i64, [0 x { i64, [0 x i64] }*] }* %a2, i64 %row, i64 %col) {
-  ret void
-}
-
-define void @prnNx4({ i64, [0 x { i64, [0 x i64] }*] }* %ar, i64 %n) {
-  ret void
+  %_a1267 = alloca { i64, [0 x i64] }*
+  %_str1271 = alloca i8*
+  %_raw_array1259 = call i64* @oat_alloc_array(i64 3)
+  %_array1260 = bitcast i64* %_raw_array1259 to { i64, [0 x i64] }*
+  %_gep1261 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1260, i32 0, i32 1, i32 0
+  store i64 110, i64* %_gep1261
+  %_gep1263 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1260, i32 0, i32 1, i32 1
+  store i64 110, i64* %_gep1263
+  %_gep1265 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1260, i32 0, i32 1, i32 2
+  store i64 110, i64* %_gep1265
+  store { i64, [0 x i64] }* %_array1260, { i64, [0 x i64] }** %_a1267
+  %_a1269 = load { i64, [0 x i64] }*, { i64, [0 x i64] }** %_a1267
+  %_id1270 = call i8* @string_of_array({ i64, [0 x i64] }* %_a1269)
+  store i8* %_id1270, i8** %_str1271
+  %_str1273 = load i8*, i8** %_str1271
+  call void @print_string(i8* %_str1273)
+  ret i64 0
 }
 
 

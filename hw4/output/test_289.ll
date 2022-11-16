@@ -1,9 +1,20 @@
-; generated from: oatprograms/run45.oat
+; generated from: oatprograms/globals2.oat
 target triple = "x86_64-unknown-linux"
-@a = global { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x { i64, [0 x i8*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }*] }* null
+@y = global i1 1
 
-define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  ret void
+define i64 @program(i64 %argc, { i64, [0 x i8*] }* %args) {
+  store i64 %argc, i64* %_argc219
+  store { i64, [0 x i8*] }* %args, { i64, [0 x i8*] }** %_args221
+  %_args221 = alloca { i64, [0 x i8*] }*
+  %_argc219 = alloca i64
+  %_y224 = load i1, i1* @y
+  br i1 %_y224, label %_if227, label %_else226
+_if227:
+  ret i64 17
+_else226:
+  br label %_after225
+_after225:
+  ret i64 15
 }
 
 

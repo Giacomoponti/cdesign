@@ -1,15 +1,10 @@
-; generated from: oatprograms/fibo.oat
+; generated from: oatprograms/globals1.oat
 target triple = "x86_64-unknown-linux"
-define i64 @fibR(i64 %n) {
-  ret void
-}
+@x = global i64 42
 
-define i64 @fibI(i64 %n) {
-  ret void
-}
-
-define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  ret void
+define i64 @program(i64 %argc, { i64, [0 x i8*] }* %args) {
+  %_x151 = load i64, i64* @x
+  ret i64 %_x151
 }
 
 

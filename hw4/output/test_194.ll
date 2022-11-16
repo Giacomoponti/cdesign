@@ -1,15 +1,10 @@
-; generated from: oatprograms/gcd.oat
+; generated from: oatprograms/globals5.oat
 target triple = "x86_64-unknown-linux"
-define i64 @gcd(i64 %a, i64 %b) {
-  ret void
-}
+@s = global i8* bitcast ([7 x i8]* @_hello!158 to i8*)
+@_hello!158 = global [7 x i8] c"hello!\00"
 
-define i64 @mod(i64 %a, i64 %b) {
-  ret void
-}
-
-define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  ret void
+define i64 @program(i64 %argc, { i64, [0 x i8*] }* %args) {
+  ret i64 17
 }
 
 

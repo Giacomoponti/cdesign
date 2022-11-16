@@ -1,11 +1,10 @@
-; generated from: oatprograms/arrayargs.oat
+; generated from: oatprograms/run30.oat
 target triple = "x86_64-unknown-linux"
-define { i64, [0 x i64] }* @f({ i64, [0 x i64] }* %x, { i64, [0 x i64] }* %y, i1 %b) {
-  ret void
-}
+@i = global i64 9
 
 define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  ret void
+  %_i237 = load i64, i64* @i
+  ret i64 %_i237
 }
 
 

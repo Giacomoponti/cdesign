@@ -1,8 +1,28 @@
-; generated from: oatprograms/easyrun2.oat
+; generated from: oatprograms/run33.oat
 target triple = "x86_64-unknown-linux"
 define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  %_bop1 = add i64 17, 18
-  ret i64 %_bop1
+  %_b309 = alloca { i64, [0 x i1] }*
+  %_i311 = alloca i64
+  %_raw_array303 = call i64* @oat_alloc_array(i64 2)
+  %_array304 = bitcast i64* %_raw_array303 to { i64, [0 x i1] }*
+  %_gep305 = getelementptr { i64, [0 x i1] }, { i64, [0 x i1] }* %_array304, i32 0, i32 1, i32 0
+  store i1 1, i1* %_gep305
+  %_gep307 = getelementptr { i64, [0 x i1] }, { i64, [0 x i1] }* %_array304, i32 0, i32 1, i32 1
+  store i1 0, i1* %_gep307
+  store { i64, [0 x i1] }* %_array304, { i64, [0 x i1] }** %_b309
+  store i64 0, i64* %_i311
+  %_b315 = load { i64, [0 x i1] }*, { i64, [0 x i1] }** %_b309
+  %_ptr313 = getelementptr { i64, [0 x i1] }, { i64, [0 x i1] }* %_b315, i32 0, i32 1, i32 0
+  %_resPtr314 = load i1, i1* %_ptr313
+  br i1 %_resPtr314, label %_if318, label %_else317
+_if318:
+  store i64 1, i64* %_i311
+  br label %_after316
+_else317:
+  br label %_after316
+_after316:
+  %_i321 = load i64, i64* %_i311
+  ret i64 %_i321
 }
 
 

@@ -331,6 +331,12 @@ let rec cmp_exp (c:Ctxt.t) (exp:Ast.exp node) : Ll.ty * Ll.operand * stream =
   | CNull rty -> ((cmp_rty rty), Null, [])
   | CInt i -> I64, Const i, []
   | CBool b -> I1, Const (if b then 1L else 0L), []
+  | CStr s -> let newID =  gensym "s" in 
+                let newID1 =  gensym "s" in 
+                  let ret =  gensym "tmp" in 
+                    let arrayTyp = Array ( String.length s + 1, I8) in 
+                      let p = Ptr(I8) in 
+                        (p, Id ret, [I(ret, Load(Ptr p, Gid newID1)); G(newID1,(p, GBitcast(Ptr(arrayTyp), GGid newID, p))); G(newID,(arrayTyp, GString(s)))])
   | Bop (bop, exp1, exp2) -> let (t1, op1, s1) = cmp_exp c exp1 in 
                               let (t2, op2, s2) = cmp_exp c exp2  in
                                 let id = gensym "bop" in 
@@ -338,19 +344,20 @@ let rec cmp_exp (c:Ctxt.t) (exp:Ast.exp node) : Ll.ty * Ll.operand * stream =
                                   | Add | Mul | Sub | Shl | Shr | Sar
                                   | IAnd | IOr | And | Or -> 
                                     let ll_bop, ll_ty = cmp_bop bop in
-                                      ll_ty, Id id, s1 >@ s2 >:: I (id ,Binop (ll_bop, t1, op1, op2)) 
+                                      ll_ty, Id id, s1 >@ s2 >:: I (id, Binop(ll_bop, t1, op1, op2)) 
                                   | Eq | Neq | Lt | Lte | Gt | Gte  -> 
                                     let ll_cnd, ll_ty = cmp_cnd bop in
-                                      ll_ty, Id id, s1 >@ s2 >:: I (id ,Icmp (ll_cnd, t1, op1, op2))
+                                      ll_ty, Id id, s1 >@ s2 >:: I (id, Icmp(ll_cnd, t1, op1, op2))
                                   end
   | Uop (uop, exp) -> let (t, op, s) = cmp_exp c exp in 
                         let id = gensym "uop" in 
                           begin match uop with
-                          | Neg -> (t, Id id, s >:: I (id, Binop (Mul, t, op, Const (-1L))) )
-                          | Lognot -> (t, Id id, s >:: I (id, Icmp (Eq, t, op, Const (0L))))
-                          | Bitnot -> (t, Id id, s >:: I (id, Binop (Xor, t, op, Const (-1L))))
+                          | Neg -> (t, Id id, s >:: I(id, Binop (Mul, t, op, Const (-1L))) )
+                          | Lognot -> (t, Id id, s >:: I(id, Icmp (Eq, t, op, Const (0L))))
+                          | Bitnot -> (t, Id id, s >:: I(id, Binop (Xor, t, op, Const (-1L))))
                           end
-  | Id id -> let (Ptr ty, op)  = Ctxt.lookup id c in 
+  | Id id -> let tyap = Ctxt.lookup id c in 
+              let (Ptr ty, op) = tyap in 
               let new_id = gensym id in 
                 (ty, Id new_id, [I(new_id, Load (Ptr ty, op))])
   | Call (exp1, exp_ls) -> let Id id = exp1.elt in 
@@ -380,11 +387,11 @@ let rec cmp_exp (c:Ctxt.t) (exp:Ast.exp node) : Ll.ty * Ll.operand * stream =
                                   let (ty2, op2, s2) = cmp_exp c (no_loc(NewArr (ty, length))) in 
                                    let s3 = ref [] in 
                                     let ls_ = List.rev (!ls) in 
-                                      let u2 = (for i=0 to (List.length (ls_))-1 do  
-                                        let (temp_ty, temp_op) = List.nth ls_ i in 
+                                      let u2 = (for j=0 to (List.length (ls_))-1 do  
+                                        let (temp_ty, temp_op) = List.nth ls_ j in 
                                           let gep_name = gensym "gep" in 
-                                            let store_name = gensym "store" in 
-                                           s3 := (!s3) >:: I(gep_name, Gep(ty2, op2, [Const 0L; Const 1L; Const (Int64.of_int i)])) 
+                                           let store_name = gensym "store" in 
+                                            s3 := (!s3) >:: I(gep_name, Gep(ty2, op2, [Const 0L; Const 1L; Const (Int64.of_int j)])) 
                                                        >:: I(store_name, Store (temp_ty, temp_op, Id gep_name))
                                       done) in 
                                       (ty2, op2, (!s) >@ s2 >@ (!s3))
@@ -394,7 +401,7 @@ let rec cmp_exp (c:Ctxt.t) (exp:Ast.exp node) : Ll.ty * Ll.operand * stream =
                                 let (ty2, op2, s2) = cmp_exp c exp2 in
                                   let Ptr(Struct [I64; Array(a,b)] ) = ty1 in 
                                   (b, Id resptr_name, (s2 @ s1) >:: I(ptr_name, Gep(ty1, op1, [Const 0L; Const 1L; op2])) >:: I(resptr_name, Load(Ptr b, Id ptr_name)))
-  | _ -> failwith "still to implement"
+  | _ -> (Void ,Null ,[])
 end
 (* Compile a statement in context c with return typ rt. Return a new context, 
    possibly extended with new local bindings, and the instruction stream
@@ -422,6 +429,7 @@ end
      pointer, you just need to store to it!
 
  *)
+ 
 (*let rec cmp_decls (vdecls:vdecl list) (c:Ctxt.t) (s:stream) : Ctxt.t * stream = 
   begin match vdecls with
   | [] -> c, s
@@ -433,7 +441,7 @@ let rec cmp_stmt (c:Ctxt.t) (rt:Ll.ty) (stmt:Ast.stmt node) : Ctxt.t * stream =
   | Ret op_exp -> begin match op_exp with 
                   | None -> (c, [T(Ret (Void, None))])
                   | Some x -> let (ty, operand, stream) = cmp_exp c x in 
-                                (c, stream >@  [T(Ret (ty, Some operand))])
+                                (c, stream >@ [T(Ret (ty, Some operand))])
                   end
  | Decl (id, exp) -> let (ty, operand, stream) = cmp_exp c exp in 
                         let new_id = gensym id in 
@@ -465,18 +473,17 @@ let rec cmp_stmt (c:Ctxt.t) (rt:Ll.ty) (stmt:Ast.stmt node) : Ctxt.t * stream =
   | While (exp, body) -> let (ty, operand, stream) = cmp_exp c exp in
     let cnd_name, body_name, pre, post = gensym "cnd", gensym "body", gensym "pre", gensym "post" in 
       let body_s = snd (cmp_block c rt body) in 
-        let preloop = [T(Br pre); L (pre)] in 
-          let condition = stream @ [I(cnd_name, Icmp(Eq, I1, operand, Const 0L )); T(Cbr (Id cnd_name, post, body_name))] in 
-            let body = [L(body_name)] @ body_s in 
-              let post = [T(Br pre); L(post)] in 
-                (c, (preloop >@ condition >@ body >@ post))
+        let preloop = [L(pre); T(Br pre)] in 
+          let condition = [L(body_name); T(Cbr (Id cnd_name, post, body_name)); I(cnd_name, Icmp(Eq, I1, operand, Const 0L))] @ stream in 
+              let post = [L(post); T(Br pre)] in 
+                (c, (preloop >@ condition >@ body_s >@ post))
 
   | For (vdecls, exp, stmt, body) -> 
     let c1 = ref [] in 
       let s1 = ref [] in 
         let u = 
           (for i=0 to (List.length (vdecls)-1) do
-          let (c_temp, s_temp) = cmp_stmt (!c1) (Void) (no_loc (Decl (List.nth vdecls i))) in 
+          let (c_temp, s_temp) = cmp_stmt (c) (Void) (no_loc (Decl (List.nth vdecls i))) in 
           c1 := c_temp;
           s1 := s_temp @ (!s1);
         done) in            
@@ -491,8 +498,8 @@ let rec cmp_stmt (c:Ctxt.t) (rt:Ll.ty) (stmt:Ast.stmt node) : Ctxt.t * stream =
               | None -> cmp_stmt (!c1) rt (no_loc (While (cond, body)))
               end
                 in (ctxt2, s2 @ (!s1)) 
-  | SCall (exp1, exp2) ->let (_,_,s) = cmp_exp c (no_loc(Call (exp1, exp2)) ) in (c,s)
-  | _ -> (c,[T (Ret (Void, None))])
+  | SCall (exp1, exp2) ->let (_,_,s) = cmp_exp c (no_loc(Call (exp1, exp2))) in (c,s)
+  | _ -> (*(c,[T (Ret (Void, None))])*)failwith "wut"
 end
 (* Compile a series of statements *)
 and cmp_block (c:Ctxt.t) (rt:Ll.ty) (stmts:Ast.block) : Ctxt.t * stream =
@@ -528,7 +535,8 @@ let helper (exp:Ast.exp) : (Ll.ty)  =
   | CBool b -> cmp_ty TBool  
   | CInt i -> cmp_ty TInt
   | CStr s -> cmp_ty (TRef (RString))
-  | _ -> failwith "expression cannot be global initializer (or array)!"
+  | CArr (ty, exp_ls) -> cmp_ty (TRef (RArray ty))
+  | _ -> failwith "helper"
 
 
 let cmp_global_ctxt (c:Ctxt.t) (p:Ast.prog) : Ctxt.t =
@@ -539,8 +547,6 @@ let cmp_global_ctxt (c:Ctxt.t) (p:Ast.prog) : Ctxt.t =
                 | Gvdecl { elt = {name; init}} -> let exp = init.elt in 
                                        let ft = helper exp in 
                                         loop (Ctxt.add c name (Ptr(ft), (Gid name))) xs
-
-
                 | _ -> loop c xs 
   end in cmp_function_ctxt (loop c p) p
 (* Compile a function declaration in global context c. Return the LLVMlite cfg
@@ -554,16 +560,37 @@ let cmp_global_ctxt (c:Ctxt.t) (p:Ast.prog) : Ctxt.t =
    4. Compile the body of the function using cmp_block
    5. Use cfg_of_stream to produce a LLVMlite cfg from 
  *)
+ let rec add_args (c:Ctxt.t) (args: (ty*id) list) : Ctxt.t = 
+  begin match args with 
+  | [] -> c
+  | (ty, id)::xs -> let new_id = gensym id in 
+              let new_ty = cmp_ty ty in 
+              add_args (Ctxt.add c id (Ptr new_ty, Id new_id)) xs 
+ end
+
+let rec inslist (args:(ty*id) list) (ls:(uid * insn) list): (uid * insn ) list = 
+  begin match args with 
+  | [] -> ls 
+  | (ty, id)::xs -> let new_id, store_id = gensym id, gensym id in 
+                      let new_ty = cmp_ty ty in 
+                        inslist xs (ls >:: (new_id, Alloca new_ty)) >:: (store_id, Store (new_ty, Id id, Id new_id))
+end
 
 let cmp_fdecl (c:Ctxt.t) (f:Ast.fdecl node) : Ll.fdecl * (Ll.gid * Ll.gdecl) list =
-  let f_ty = cmp_fty ((List.map fst f.elt.args), (f.elt.frtyp)) in 
-    let fname = f.elt.fname in 
-      let f_param = List.map snd f.elt.args in 
-        let block = f.elt.body in 
-          let ret_type = cmp_ret_ty (f.elt.frtyp) in
-            let stream = snd (cmp_block c ret_type block) in 
-              let (f_cfg, ls) = cfg_of_stream(stream) in
-                ({f_ty; f_param; f_cfg}, ls)   
+  let args = f.elt.args in 
+    let frtyp = f.elt.frtyp in 
+      let f_ty = cmp_fty ((List.map fst args), frtyp) in 
+        let fname = f.elt.fname in 
+          let f_param = List.map snd args in 
+            let block = f.elt.body in 
+              let ret_type = snd f_ty in
+              let s1 = List.rev@@lift (inslist args []) in 
+                let c2 = add_args c args in 
+
+                let s2 = snd (cmp_block c2 ret_type block) in 
+                let s3 = s1 >@ s2 in 
+                  let (f_cfg, ls) = cfg_of_stream(s3) in
+                    ({f_ty; f_param; f_cfg}, ls)   
 
 
 (* Compile a global initializer, returning the resulting LLVMlite global
@@ -583,7 +610,23 @@ let rec cmp_gexp c (e:Ast.exp node) : Ll.gdecl * (Ll.gid * Ll.gdecl) list =
   | CNull rty -> ((Ptr (cmp_rty rty), GNull), [])  
   | CBool b -> (((cmp_ty TBool), if b then (GInt 1L) else (GInt 0L)), [])
   | CInt i -> (((cmp_ty TInt), GInt i), [])
-  | CStr s -> (((cmp_ty (TRef (RString))), GString s), [])
+  | CStr s -> let str_name = gensym "str" in 
+                let new_ty = Array ((String.length s) + 1, I8) in 
+                   ((Ptr(I8), GBitcast (Ptr new_ty, GGid str_name, Ptr(I8))), [(str_name, (new_ty, GString s))])
+  | CArr (ty, exp_ls) -> let arr_name = gensym "arr" in 
+                          let new_ty = cmp_ty ty in 
+                            let ls1, ls2 = ref [], ref [] in 
+                                let len = List.length exp_ls in  
+                                  let u = (for i=0 to (len)-1 do 
+                                    let (decl, ls) = cmp_gexp c (List.nth exp_ls i) in 
+                                      ls1 := (!ls1) >:: decl;
+                                      ls2 := (!ls2) @ ls;
+                                  done) in 
+                                  let ret_ty = Ptr(Struct[I64; Array(0, new_ty)]) in 
+                                    let arr_ty = Array(len, new_ty) in 
+                                      let tmp_ty = Ptr(Struct[I64; arr_ty]) in 
+                                      let ptr = [(arr_name, (Struct [I64; Array(len, new_ty)], GStruct [(I64, GInt (Int64.of_int len)); (arr_ty, GArray (!ls1))]))] in 
+                                       ((ret_ty, GBitcast(tmp_ty, GGid arr_name, ret_ty)), ((!ls2) @ ptr))
   | _ -> failwith "cannot appear as global initializer! (or array)"
   end
 (* Oat internals function context ------------------------------------------- *)

@@ -1,24 +1,22 @@
-; generated from: oatprograms/run28.oat
+; generated from: oatprograms/run36.oat
 target triple = "x86_64-unknown-linux"
 define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  %_i211 = alloca i64
-  %_j216 = alloca i64
-  store i64 9, i64* %_i211
-  %_i213 = load i64, i64* %_i211
-  %_i214 = load i64, i64* %_i211
-  %_bop215 = add i64 %_i213, %_i214
-  store i64 %_bop215, i64* %_j216
-  %_i218 = load i64, i64* %_i211
-  %_i219 = load i64, i64* %_i211
-  %_i220 = load i64, i64* %_i211
-  %_bop221 = mul i64 %_i219, %_i220
-  %_bop222 = add i64 %_i218, %_bop221
-  %_j223 = load i64, i64* %_j216
-  %_bop224 = sub i64 %_bop222, %_j223
-  %_bop225 = lshr i64 %_bop224, 2
-  %_bop226 = shl i64 %_bop225, 2
-  %_bop227 = ashr i64 %_bop226, 2
-  ret i64 %_bop227
+  %_a832 = alloca { i64, [0 x i64] }*
+  %_argc821 = alloca i64
+  %_argv823 = alloca { i64, [0 x i8*] }*
+  store { i64, [0 x i8*] }* %argv, { i64, [0 x i8*] }** %_argv823
+  store i64 %argc, i64* %_argc821
+  %_raw_array826 = call i64* @oat_alloc_array(i64 2)
+  %_array827 = bitcast i64* %_raw_array826 to { i64, [0 x i64] }*
+  %_gep828 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array827, i32 0, i32 1, i32 0
+  store i64 0, i64* %_gep828
+  %_gep830 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array827, i32 0, i32 1, i32 1
+  store i64 0, i64* %_gep830
+  store { i64, [0 x i64] }* %_array827, { i64, [0 x i64] }** %_a832
+  %_a836 = load { i64, [0 x i64] }*, { i64, [0 x i64] }** %_a832
+  %_ptr834 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_a836, i32 0, i32 1, i32 1
+  %_resPtr835 = load i64, i64* %_ptr834
+  ret i64 %_resPtr835
 }
 
 

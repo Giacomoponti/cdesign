@@ -1,15 +1,7 @@
-; generated from: oatprograms/heap.oat
+; generated from: oatprograms/easyrun1.oat
 target triple = "x86_64-unknown-linux"
-define void @min_heapify({ i64, [0 x i64] }* %array, i64 %i, i64 %len) {
-  ret void
-}
-
-define void @make_min_heap({ i64, [0 x i64] }* %array, i64 %len) {
-  ret void
-}
-
 define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  ret void
+  ret i64 17
 }
 
 

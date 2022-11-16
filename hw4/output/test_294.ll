@@ -1,11 +1,14 @@
-; generated from: oatprograms/bsort.oat
+; generated from: oatprograms/path1.oat
 target triple = "x86_64-unknown-linux"
-define void @bubble_sort({ i64, [0 x i64] }* %numbers, i64 %array_size) {
-  ret void
-}
-
 define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  ret void
+  %_x280 = alloca i64
+  store i64 %argc, i64* %_argc275
+  store { i64, [0 x i8*] }* %argv, { i64, [0 x i8*] }** %_argv277
+  %_argv277 = alloca { i64, [0 x i8*] }*
+  %_argc275 = alloca i64
+  store i64 17, i64* %_x280
+  %_x282 = load i64, i64* %_x280
+  ret i64 %_x282
 }
 
 

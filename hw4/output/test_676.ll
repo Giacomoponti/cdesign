@@ -1,23 +1,28 @@
-; generated from: oatprograms/run25.oat
+; generated from: oatprograms/run20.oat
 target triple = "x86_64-unknown-linux"
+define i64 @f() {
+  ret i64 19
+}
+
 define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  %_a1225 = alloca { i64, [0 x i64] }*
-  %_str1229 = alloca i8*
-  %_raw_array1217 = call i64* @oat_alloc_array(i64 3)
-  %_array1218 = bitcast i64* %_raw_array1217 to { i64, [0 x i64] }*
-  %_gep1219 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1218, i32 0, i32 1, i32 0
-  store i64 110, i64* %_gep1219
-  %_gep1221 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1218, i32 0, i32 1, i32 1
-  store i64 110, i64* %_gep1221
-  %_gep1223 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1218, i32 0, i32 1, i32 2
-  store i64 110, i64* %_gep1223
-  store { i64, [0 x i64] }* %_array1218, { i64, [0 x i64] }** %_a1225
-  %_a1227 = load { i64, [0 x i64] }*, { i64, [0 x i64] }** %_a1225
-  %_id1228 = call i8* @string_of_array({ i64, [0 x i64] }* %_a1227)
-  store i8* %_id1228, i8** %_str1229
-  %_str1231 = load i8*, i8** %_str1229
-  call void @print_string(i8* %_str1231)
-  ret i64 0
+  %_a2098 = alloca { i64, [0 x i64] }*
+  %_argc2085 = alloca i64
+  %_argv2087 = alloca { i64, [0 x i8*] }*
+  store { i64, [0 x i8*] }* %argv, { i64, [0 x i8*] }** %_argv2087
+  store i64 %argc, i64* %_argc2085
+  %_raw_array2090 = call i64* @oat_alloc_array(i64 3)
+  %_array2091 = bitcast i64* %_raw_array2090 to { i64, [0 x i64] }*
+  %_gep2092 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array2091, i32 0, i32 1, i32 0
+  store i64 1, i64* %_gep2092
+  %_gep2094 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array2091, i32 0, i32 1, i32 1
+  store i64 100, i64* %_gep2094
+  %_gep2096 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array2091, i32 0, i32 1, i32 2
+  store i64 19, i64* %_gep2096
+  store { i64, [0 x i64] }* %_array2091, { i64, [0 x i64] }** %_a2098
+  %_a2102 = load { i64, [0 x i64] }*, { i64, [0 x i64] }** %_a2098
+  %_ptr2100 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_a2102, i32 0, i32 1, i32 2
+  %_resPtr2101 = load i64, i64* %_ptr2100
+  ret i64 %_resPtr2101
 }
 
 

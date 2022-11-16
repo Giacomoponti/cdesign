@@ -1,7 +1,52 @@
-; generated from: oatprograms/run26.oat
+; generated from: oatprograms/run38.oat
 target triple = "x86_64-unknown-linux"
+define i64 @f1() {
+  %_id481 = call i64 @f2()
+  ret i64 %_id481
+}
+
+define i64 @f2() {
+  %_id480 = call i64 @f3()
+  ret i64 %_id480
+}
+
+define i64 @f3() {
+  %_id479 = call i64 @f4()
+  ret i64 %_id479
+}
+
+define i64 @f4() {
+  %_id478 = call i64 @f5()
+  ret i64 %_id478
+}
+
+define i64 @f5() {
+  %_id477 = call i64 @f6()
+  ret i64 %_id477
+}
+
+define i64 @f6() {
+  %_id476 = call i64 @f7()
+  ret i64 %_id476
+}
+
+define i64 @f7() {
+  %_id475 = call i64 @f8()
+  ret i64 %_id475
+}
+
+define i64 @f8() {
+  %_id474 = call i64 @f9()
+  ret i64 %_id474
+}
+
+define i64 @f9() {
+  ret i64 31
+}
+
 define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  ret i64 0
+  %_id473 = call i64 @f1()
+  ret i64 %_id473
 }
 
 

@@ -1,10 +1,32 @@
-; generated from: oatprograms/run30.oat
+; generated from: oatprograms/easyrun5.oat
 target triple = "x86_64-unknown-linux"
-@i = global i64 9
-
 define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  %_i65 = load i64, i64* @i
-  ret i64 %_i65
+  %_x63 = alloca i64
+  %_y66 = alloca i64
+  %_argc57 = alloca i64
+  %_argv59 = alloca { i64, [0 x i8*] }*
+  store { i64, [0 x i8*] }* %argv, { i64, [0 x i8*] }** %_argv59
+  store i64 %argc, i64* %_argc57
+  %_bop62 = lshr i64 100, 3
+  store i64 %_bop62, i64* %_x63
+  %_bop65 = shl i64 100, 3
+  store i64 %_bop65, i64* %_y66
+  %_x68 = load i64, i64* %_x63
+  %_y69 = load i64, i64* %_y66
+  %_bop70 = sub i64 %_x68, %_y69
+  %_bop71 = icmp sle i64 %_bop70, 0
+  br i1 %_bop71, label %_if74, label %_else73
+_if74:
+  %_x79 = load i64, i64* %_x63
+  %_uop80 = mul i64 %_x79, -1
+  %_y81 = load i64, i64* %_y66
+  %_bop82 = sub i64 %_uop80, %_y81
+  ret i64 %_bop82
+_else73:
+  %_x76 = load i64, i64* %_x63
+  %_y77 = load i64, i64* %_y66
+  %_bop78 = sub i64 %_x76, %_y77
+  ret i64 %_bop78
 }
 
 

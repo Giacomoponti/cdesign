@@ -1,11 +1,20 @@
-; generated from: oatprograms/bsort.oat
+; generated from: oatprograms/run18.oat
 target triple = "x86_64-unknown-linux"
-define void @bubble_sort({ i64, [0 x i64] }* %numbers, i64 %array_size) {
-  ret void
-}
-
 define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  ret void
+  %_a1222 = alloca { i64, [0 x i64] }*
+  %_raw_array1214 = call i64* @oat_alloc_array(i64 3)
+  %_array1215 = bitcast i64* %_raw_array1214 to { i64, [0 x i64] }*
+  %_gep1216 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1215, i32 0, i32 1, i32 0
+  store i64 1, i64* %_gep1216
+  %_gep1218 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1215, i32 0, i32 1, i32 1
+  store i64 100, i64* %_gep1218
+  %_gep1220 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1215, i32 0, i32 1, i32 2
+  store i64 999, i64* %_gep1220
+  store { i64, [0 x i64] }* %_array1215, { i64, [0 x i64] }** %_a1222
+  %_a1226 = load { i64, [0 x i64] }*, { i64, [0 x i64] }** %_a1222
+  %_ptr1224 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_a1226, i32 0, i32 1, i32 2
+  %_resPtr1225 = load i64, i64* %_ptr1224
+  ret i64 %_resPtr1225
 }
 
 

@@ -1,9 +1,10 @@
-; generated from: oatprograms/run7.oat
+; generated from: oatprograms/path1.oat
 target triple = "x86_64-unknown-linux"
-@arr = global { i64, [0 x { i64, [0 x { i64, [0 x i64] }*] }*] } null
-
 define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  ret void
+  %_x169 = alloca i64
+  store i64 17, i64* %_x169
+  %_x171 = load i64, i64* %_x169
+  ret i64 %_x171
 }
 
 

@@ -1,7 +1,11 @@
-; generated from: oatprograms/lib14.oat
+; generated from: oatprograms/run24.oat
 target triple = "x86_64-unknown-linux"
 define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  ret void
+  %_a1257 = alloca { i64, [0 x i64] }*
+  %_raw_array1255 = call i64* @oat_alloc_array(i64 0)
+  %_array1256 = bitcast i64* %_raw_array1255 to { i64, [0 x i64] }*
+  store { i64, [0 x i64] }* %_array1256, { i64, [0 x i64] }** %_a1257
+  ret i64 0
 }
 
 

@@ -1,9 +1,8 @@
-; generated from: oatprograms/run60.oat
+; generated from: oatprograms/easyrun2.oat
 target triple = "x86_64-unknown-linux"
-@i = global i64 3
-
 define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  ret void
+  %_bop1 = add i64 17, 18
+  ret i64 %_bop1
 }
 
 

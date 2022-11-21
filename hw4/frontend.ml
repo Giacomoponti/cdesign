@@ -27,7 +27,7 @@ type stream = elt list
 let ( >@ ) x y = y @ x
 let ( >:: ) x y = y :: x
 let lift : (uid * insn) list -> stream = List.rev_map (fun (x,i) -> I (x,i))
-
+let adamgibilift : (uid * insn) list -> stream = List.map (fun (x,i) -> I (x,i))
 (* Build a CFG and collection of global variable definitions from a stream *)
 let cfg_of_stream (code:stream) : Ll.cfg * (Ll.gid * Ll.gdecl) list  =
     let gs, einsns, insns, term_opt, blks = List.fold_left
@@ -70,8 +70,7 @@ module Ctxt = struct
   let add (c:t) (id:id) (bnd:Ll.ty * Ll.operand) : t = (id,bnd)::c
 
   (* Lookup a binding in the context *)
-  let lookup (id:Ast.id) (c:t) : Ll.ty * Ll.operand =
-    List.assoc id c
+  let lookup (id:Ast.id) (c:t) : Ll.ty * Ll.operand = List.assoc id c
 
   (* Lookup a function, fail otherwise *)
   let lookup_function (id:Ast.id) (c:t) : Ll.ty * Ll.operand =
@@ -356,12 +355,12 @@ let rec cmp_exp (c:Ctxt.t) (exp:Ast.exp node) : Ll.ty * Ll.operand * stream =
                           | Lognot -> (t, Id id, s >:: I(id, Icmp (Eq, t, op, Const (0L))))
                           | Bitnot -> (t, Id id, s >:: I(id, Binop (Xor, t, op, Const (-1L))))
                           end
-  | Id id -> let tyap = Ctxt.lookup id c in 
-              let (Ptr ty, op) = tyap in 
-              let new_id = gensym id in 
+  | Id id -> let tmp = Ctxt.lookup id c in 
+              let (Ptr ty, op) = tmp in 
+                let new_id = gensym id in 
                 (ty, Id new_id, [I(new_id, Load (Ptr ty, op))])
   | Call (exp1, exp_ls) -> let Id id = exp1.elt in 
-                            let (ty, operand) = Ctxt.lookup_function id c in 
+                            let (ty, operand) = Ctxt.lookup_function id c in  
                               let Ptr(Fun(_, rt)) = ty in 
                                 let ls = ref [] in 
                                   let s = ref [] in 
@@ -370,7 +369,7 @@ let rec cmp_exp (c:Ctxt.t) (exp:Ast.exp node) : Ll.ty * Ll.operand * stream =
                                         ls := (ty1, op1) :: (!ls);
                                         s := s1 @ (!s)
                                     done) in  
-                                    let new_id = gensym "id" in 
+                                    let new_id = gensym "" in 
                                     (rt, Id new_id, (!s) >:: I(new_id, (Call (rt, operand, List.rev (!ls)))))
   |(NewArr (ty, exp)) ->  let (ty1, op1, s1) = cmp_exp c exp in 
     let (arr_ty, arr_op, s2) = oat_alloc_array ty op1 in 
@@ -429,35 +428,28 @@ end
      pointer, you just need to store to it!
 
  *)
- 
-(*let rec cmp_decls (vdecls:vdecl list) (c:Ctxt.t) (s:stream) : Ctxt.t * stream = 
-  begin match vdecls with
-  | [] -> c, s
-  | x::xs -> let (c1, s1) = cmp_stmt c Void (no_loc (Decl x)) in cmp_decls xs c2 (s >@ s1) 
- end *)
-
 let rec cmp_stmt (c:Ctxt.t) (rt:Ll.ty) (stmt:Ast.stmt node) : Ctxt.t * stream =
   begin match stmt.elt with 
   | Ret op_exp -> begin match op_exp with 
                   | None -> (c, [T(Ret (Void, None))])
                   | Some x -> let (ty, operand, stream) = cmp_exp c x in 
-                                (c, stream >@ [T(Ret (ty, Some operand))])
+                                (c, stream >:: (T(Ret (rt, Some operand))))
                   end
  | Decl (id, exp) -> let (ty, operand, stream) = cmp_exp c exp in 
                         let new_id = gensym id in 
-                          let store_id = gensym id in 
+                          let store_id = gensym "" in 
                             let decl = stream >:: E(new_id, Alloca ty) >:: I(store_id, Store (ty, operand, Id new_id)) in 
                               (Ctxt.add c id (Ptr ty, Id new_id), decl)
 
  | Assn (exp1, exp2) -> let (ty2, op2, s2) = cmp_exp c exp2 in 
                         begin match exp1.elt with 
                         | Id id -> let (ty, op) = Ctxt.lookup id c in 
-                          (c, s2 >:: I(gensym "ass", Store (ty2, op2 ,op)))
+                          (c, s2 >:: I(gensym "", Store (ty2, op2 ,op)))
                         | Index (exp3, exp4) -> let (ty3, op3, s3) = cmp_exp c exp3 in 
                                                   let (ty4, op4, s4) = cmp_exp c exp4 in 
                                                     let ptr_name = gensym "ptr" in 
                                                       (*let Ptr (Struct [I64; Array(a,b)]) = ty3 in*) 
-                                                      (c, (s4 @ s3 @ s2) >:: I(ptr_name, Gep( ty3, op3, [Const 0L; Const 1L; op4])) >:: I(gensym "store", Store(ty2, op2, Id ptr_name))) 
+                                                      (c, (s4 @ s3 @ s2) >:: I(ptr_name, Gep( ty3, op3, [Const 0L; Const 1L; op4])) >:: I(gensym "", Store(ty2, op2, Id ptr_name))) 
                         end 
   
   | If (exp, stmt1, stmt2) -> 
@@ -479,14 +471,14 @@ let rec cmp_stmt (c:Ctxt.t) (rt:Ll.ty) (stmt:Ast.stmt node) : Ctxt.t * stream =
                 (c, (preloop >@ condition >@ body_s >@ post))
 
   | For (vdecls, exp, stmt, body) -> 
-    let c1 = ref [] in 
+    let c1 = ref c in 
       let s1 = ref [] in 
         let u = 
           (for i=0 to (List.length (vdecls)-1) do
-          let (c_temp, s_temp) = cmp_stmt (c) (Void) (no_loc (Decl (List.nth vdecls i))) in 
+          let (c_temp, s_temp) = cmp_stmt (!c1) (Void) (no_loc (Decl (List.nth vdecls i))) in 
           c1 := c_temp;
           s1 := s_temp @ (!s1);
-        done) in            
+        done) in 
           let cond = 
             (begin match exp with 
             | Some a -> a 
@@ -499,7 +491,7 @@ let rec cmp_stmt (c:Ctxt.t) (rt:Ll.ty) (stmt:Ast.stmt node) : Ctxt.t * stream =
               end
                 in (ctxt2, s2 @ (!s1)) 
   | SCall (exp1, exp2) ->let (_,_,s) = cmp_exp c (no_loc(Call (exp1, exp2))) in (c,s)
-  | _ -> (*(c,[T (Ret (Void, None))])*)failwith "wut"
+  | _ -> (c,[T (Ret (Void, None))])
 end
 (* Compile a series of statements *)
 and cmp_block (c:Ctxt.t) (rt:Ll.ty) (stmts:Ast.block) : Ctxt.t * stream =
@@ -545,7 +537,7 @@ let cmp_global_ctxt (c:Ctxt.t) (p:Ast.prog) : Ctxt.t =
       | [] -> c
       | x::xs -> match x with 
                 | Gvdecl { elt = {name; init}} -> let exp = init.elt in 
-                                       let ft = helper exp in 
+                                       let ft = helper exp in
                                         loop (Ctxt.add c name (Ptr(ft), (Gid name))) xs
                 | _ -> loop c xs 
   end in cmp_function_ctxt (loop c p) p
@@ -560,12 +552,13 @@ let cmp_global_ctxt (c:Ctxt.t) (p:Ast.prog) : Ctxt.t =
    4. Compile the body of the function using cmp_block
    5. Use cfg_of_stream to produce a LLVMlite cfg from 
  *)
- let rec add_args (c:Ctxt.t) (args: (ty*id) list) : Ctxt.t = 
+ let rec add_args (c:Ctxt.t) (args: (ty*id) list) (ls:(uid * insn) list) : (Ctxt.t*(uid * insn ) list) = 
   begin match args with 
-  | [] -> c
-  | (ty, id)::xs -> let new_id = gensym id in 
-              let new_ty = cmp_ty ty in 
-              add_args (Ctxt.add c id (Ptr new_ty, Id new_id)) xs 
+  | [] -> (c, ls)
+  | (ty, id)::xs -> let  new_id, store_id = gensym id, gensym id in 
+                      let new_ty = cmp_ty ty in 
+                        let list = (ls @ [(new_id, Alloca new_ty)]) @ [(store_id, Store (new_ty, Id id, Id new_id))] in 
+                          add_args (Ctxt.add c id (Ptr new_ty, Id new_id)) xs list
  end
 
 let rec inslist (args:(ty*id) list) (ls:(uid * insn) list): (uid * insn ) list = 
@@ -584,9 +577,8 @@ let cmp_fdecl (c:Ctxt.t) (f:Ast.fdecl node) : Ll.fdecl * (Ll.gid * Ll.gdecl) lis
           let f_param = List.map snd args in 
             let block = f.elt.body in 
               let ret_type = snd f_ty in
-              let s1 = List.rev@@lift (inslist args []) in 
-                let c2 = add_args c args in 
-
+                let (c2, s1) = add_args c args [] in 
+                  let s1 = lift s1 in 
                 let s2 = snd (cmp_block c2 ret_type block) in 
                 let s3 = s1 >@ s2 in 
                   let (f_cfg, ls) = cfg_of_stream(s3) in
@@ -619,8 +611,8 @@ let rec cmp_gexp c (e:Ast.exp node) : Ll.gdecl * (Ll.gid * Ll.gdecl) list =
                                 let len = List.length exp_ls in  
                                   let u = (for i=0 to (len)-1 do 
                                     let (decl, ls) = cmp_gexp c (List.nth exp_ls i) in 
-                                      ls1 := (!ls1) >:: decl;
-                                      ls2 := (!ls2) @ ls;
+                                      ls1 := (!ls1) @ [decl];
+                                      ls2 := (!ls2) >@ ls;
                                   done) in 
                                   let ret_ty = Ptr(Struct[I64; Array(0, new_ty)]) in 
                                     let arr_ty = Array(len, new_ty) in 

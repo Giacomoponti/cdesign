@@ -1,24 +1,16 @@
-; generated from: oatprograms/run28.oat
+; generated from: oatprograms/run61.oat
 target triple = "x86_64-unknown-linux"
+@s = global i8* bitcast ([3 x i8]* @_str1033 to i8*)
+@_str1033 = global [3 x i8] c"42\00"
+
 define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  %_i253 = alloca i64
-  %_j258 = alloca i64
-  store i64 9, i64* %_i253
-  %_i255 = load i64, i64* %_i253
-  %_i256 = load i64, i64* %_i253
-  %_bop257 = add i64 %_i255, %_i256
-  store i64 %_bop257, i64* %_j258
-  %_i260 = load i64, i64* %_i253
-  %_i261 = load i64, i64* %_i253
-  %_i262 = load i64, i64* %_i253
-  %_bop263 = mul i64 %_i261, %_i262
-  %_bop264 = add i64 %_i260, %_bop263
-  %_j265 = load i64, i64* %_j258
-  %_bop266 = sub i64 %_bop264, %_j265
-  %_bop267 = lshr i64 %_bop266, 2
-  %_bop268 = shl i64 %_bop267, 2
-  %_bop269 = ashr i64 %_bop268, 2
-  ret i64 %_bop269
+  %_argc1028 = alloca i64
+  store i64 %argc, i64* %_argc1028
+  %_argv1030 = alloca { i64, [0 x i8*] }*
+  store { i64, [0 x i8*] }* %argv, { i64, [0 x i8*] }** %_argv1030
+  %_s1031 = load i8*, i8** @s
+  call void @print_string(i8* %_s1031)
+  ret i64 0
 }
 
 

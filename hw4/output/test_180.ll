@@ -3,35 +3,39 @@ target triple = "x86_64-unknown-linux"
 @a = global i64 1
 
 define i64 @f() {
-  %_a1477 = load i64, i64* @a
-  %_bop1478 = add i64 %_a1477, 1
-  store i64 %_bop1478, i64* @a
-  %_a1480 = load i64, i64* @a
-  ret i64 %_a1480
+  %_a2751 = load i64, i64* @a
+  %_bop2752 = add i64 %_a2751, 1
+  store i64 %_bop2752, i64* @a
+  %_a2754 = load i64, i64* @a
+  ret i64 %_a2754
 }
 
 define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  %_b1460 = alloca { i64, [0 x i64] }*
-  %_id1457 = call i64 @f()
-  %_raw_array1458 = call i64* @oat_alloc_array(i64 %_id1457)
-  %_array1459 = bitcast i64* %_raw_array1458 to { i64, [0 x i64] }*
-  store { i64, [0 x i64] }* %_array1459, { i64, [0 x i64] }** %_b1460
-  %_b1462 = load { i64, [0 x i64] }*, { i64, [0 x i64] }** %_b1460
-  %_ptr1463 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_b1462, i32 0, i32 1, i32 0
-  store i64 0, i64* %_ptr1463
-  %_b1465 = load { i64, [0 x i64] }*, { i64, [0 x i64] }** %_b1460
-  %_ptr1466 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_b1465, i32 0, i32 1, i32 1
-  store i64 1, i64* %_ptr1466
-  %_a1468 = load i64, i64* @a
-  %_b1471 = load { i64, [0 x i64] }*, { i64, [0 x i64] }** %_b1460
-  %_ptr1469 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_b1471, i32 0, i32 1, i32 0
-  %_resPtr1470 = load i64, i64* %_ptr1469
-  %_bop1472 = add i64 %_a1468, %_resPtr1470
-  %_b1475 = load { i64, [0 x i64] }*, { i64, [0 x i64] }** %_b1460
-  %_ptr1473 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_b1475, i32 0, i32 1, i32 1
-  %_resPtr1474 = load i64, i64* %_ptr1473
-  %_bop1476 = add i64 %_bop1472, %_resPtr1474
-  ret i64 %_bop1476
+  %_b2734 = alloca { i64, [0 x i64] }*
+  %_argc2728 = alloca i64
+  store i64 %argc, i64* %_argc2728
+  %_argv2730 = alloca { i64, [0 x i8*] }*
+  store { i64, [0 x i8*] }* %argv, { i64, [0 x i8*] }** %_argv2730
+  %_2731 = call i64 @f()
+  %_raw_array2732 = call i64* @oat_alloc_array(i64 %_2731)
+  %_array2733 = bitcast i64* %_raw_array2732 to { i64, [0 x i64] }*
+  store { i64, [0 x i64] }* %_array2733, { i64, [0 x i64] }** %_b2734
+  %_b2736 = load { i64, [0 x i64] }*, { i64, [0 x i64] }** %_b2734
+  %_ptr2737 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_b2736, i32 0, i32 1, i32 0
+  store i64 0, i64* %_ptr2737
+  %_b2739 = load { i64, [0 x i64] }*, { i64, [0 x i64] }** %_b2734
+  %_ptr2740 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_b2739, i32 0, i32 1, i32 1
+  store i64 1, i64* %_ptr2740
+  %_a2742 = load i64, i64* @a
+  %_b2745 = load { i64, [0 x i64] }*, { i64, [0 x i64] }** %_b2734
+  %_ptr2743 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_b2745, i32 0, i32 1, i32 0
+  %_resPtr2744 = load i64, i64* %_ptr2743
+  %_bop2746 = add i64 %_a2742, %_resPtr2744
+  %_b2749 = load { i64, [0 x i64] }*, { i64, [0 x i64] }** %_b2734
+  %_ptr2747 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_b2749, i32 0, i32 1, i32 1
+  %_resPtr2748 = load i64, i64* %_ptr2747
+  %_bop2750 = add i64 %_bop2746, %_resPtr2748
+  ret i64 %_bop2750
 }
 
 

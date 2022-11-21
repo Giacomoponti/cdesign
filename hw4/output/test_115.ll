@@ -1,52 +1,51 @@
-; generated from: oatprograms/run38.oat
+; generated from: oatprograms/easyrun9.oat
 target triple = "x86_64-unknown-linux"
-define i64 @f1() {
-  %_id431 = call i64 @f2()
-  ret i64 %_id431
-}
-
-define i64 @f2() {
-  %_id430 = call i64 @f3()
-  ret i64 %_id430
-}
-
-define i64 @f3() {
-  %_id429 = call i64 @f4()
-  ret i64 %_id429
-}
-
-define i64 @f4() {
-  %_id428 = call i64 @f5()
-  ret i64 %_id428
-}
-
-define i64 @f5() {
-  %_id427 = call i64 @f6()
-  ret i64 %_id427
-}
-
-define i64 @f6() {
-  %_id426 = call i64 @f7()
-  ret i64 %_id426
-}
-
-define i64 @f7() {
-  %_id425 = call i64 @f8()
-  ret i64 %_id425
-}
-
-define i64 @f8() {
-  %_id424 = call i64 @f9()
-  ret i64 %_id424
-}
-
-define i64 @f9() {
-  ret i64 31
-}
-
 define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  %_id423 = call i64 @f1()
-  ret i64 %_id423
+  %_x138 = alloca { i64, [0 x i64] }*
+  %_ans140 = alloca i64
+  %_i142 = alloca i64
+  %_argc125 = alloca i64
+  store i64 %argc, i64* %_argc125
+  %_argv127 = alloca { i64, [0 x i8*] }*
+  store { i64, [0 x i8*] }* %argv, { i64, [0 x i8*] }** %_argv127
+  %_raw_array128 = call i64* @oat_alloc_array(i64 4)
+  %_array129 = bitcast i64* %_raw_array128 to { i64, [0 x i64] }*
+  %_gep130 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array129, i32 0, i32 1, i32 0
+  store i64 1, i64* %_gep130
+  %_gep132 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array129, i32 0, i32 1, i32 1
+  store i64 2, i64* %_gep132
+  %_gep134 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array129, i32 0, i32 1, i32 2
+  store i64 3, i64* %_gep134
+  %_gep136 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array129, i32 0, i32 1, i32 3
+  store i64 4, i64* %_gep136
+  store { i64, [0 x i64] }* %_array129, { i64, [0 x i64] }** %_x138
+  store i64 0, i64* %_ans140
+  store i64 0, i64* %_i142
+  br label %_pre147
+_pre147:
+  %_i144 = load i64, i64* %_i142
+  %_bop145 = icmp slt i64 %_i144, 4
+  %_cnd149 = icmp eq i1 %_bop145, 0
+  br i1 %_cnd149, label %_post146, label %_body148
+_body148:
+  %_x152 = load { i64, [0 x i64] }*, { i64, [0 x i64] }** %_x138
+  %_i153 = load i64, i64* %_i142
+  %_ptr150 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_x152, i32 0, i32 1, i64 %_i153
+  %_resPtr151 = load i64, i64* %_ptr150
+  %_x156 = load { i64, [0 x i64] }*, { i64, [0 x i64] }** %_x138
+  %_i157 = load i64, i64* %_i142
+  %_ptr154 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_x156, i32 0, i32 1, i64 %_i157
+  %_resPtr155 = load i64, i64* %_ptr154
+  %_uop158 = xor i64 %_resPtr155, -1
+  %_bop159 = mul i64 %_resPtr151, %_uop158
+  store i64 %_bop159, i64* %_ans140
+  %_i161 = load i64, i64* %_i142
+  %_bop162 = add i64 %_i161, 1
+  store i64 %_bop162, i64* %_i142
+  br label %_pre147
+_post146:
+  %_ans164 = load i64, i64* %_ans140
+  ret i64 %_ans164
 }
 
 

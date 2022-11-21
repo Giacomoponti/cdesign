@@ -1,19 +1,34 @@
-; generated from: oatprograms/run4.oat
+; generated from: oatprograms/easyrun3.oat
 target triple = "x86_64-unknown-linux"
-@arr = global { i64, [0 x i64] }* null
-
 define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  %_raw_array666 = call i64* @oat_alloc_array(i64 2)
-  %_array667 = bitcast i64* %_raw_array666 to { i64, [0 x i64] }*
-  %_gep668 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array667, i32 0, i32 1, i32 0
-  store i64 17, i64* %_gep668
-  %_gep670 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array667, i32 0, i32 1, i32 1
-  store i64 42, i64* %_gep670
-  store { i64, [0 x i64] }* %_array667, { i64, [0 x i64] }** @arr
-  %_arr675 = load { i64, [0 x i64] }*, { i64, [0 x i64] }** @arr
-  %_ptr673 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_arr675, i32 0, i32 1, i32 1
-  %_resPtr674 = load i64, i64* %_ptr673
-  ret i64 %_resPtr674
+  %_x14 = alloca i64
+  %_i16 = alloca i64
+  %_argc11 = alloca i64
+  store i64 %argc, i64* %_argc11
+  %_argv13 = alloca { i64, [0 x i8*] }*
+  store { i64, [0 x i8*] }* %argv, { i64, [0 x i8*] }** %_argv13
+  store i64 0, i64* %_x14
+  store i64 0, i64* %_i16
+  br label %_pre21
+_pre21:
+  %_i18 = load i64, i64* %_i16
+  %_bop19 = icmp slt i64 %_i18, 10
+  %_cnd23 = icmp eq i1 %_bop19, 0
+  br i1 %_cnd23, label %_post20, label %_body22
+_body22:
+  %_x24 = load i64, i64* %_x14
+  %_i25 = load i64, i64* %_i16
+  %_bop26 = add i64 %_x24, %_i25
+  %_i27 = load i64, i64* %_i16
+  %_bop28 = mul i64 %_bop26, %_i27
+  store i64 %_bop28, i64* %_x14
+  %_i30 = load i64, i64* %_i16
+  %_bop31 = add i64 %_i30, 1
+  store i64 %_bop31, i64* %_i16
+  br label %_pre21
+_post20:
+  %_x33 = load i64, i64* %_x14
+  ret i64 %_x33
 }
 
 

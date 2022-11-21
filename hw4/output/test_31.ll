@@ -1,34 +1,17 @@
-; generated from: oatprograms/run6.oat
+; generated from: oatprograms/run31.oat
 target triple = "x86_64-unknown-linux"
-@arr = global { i64, [0 x { i64, [0 x i64] }*] }* null
+@i = global i64 9
 
 define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  %_arr667 = alloca { i64, [0 x { i64, [0 x i64] }*] }*
-  %_raw_array649 = call i64* @oat_alloc_array(i64 2)
-  %_array650 = bitcast i64* %_raw_array649 to { i64, [0 x i64] }*
-  %_gep651 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array650, i32 0, i32 1, i32 0
-  store i64 1, i64* %_gep651
-  %_gep653 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array650, i32 0, i32 1, i32 1
-  store i64 2, i64* %_gep653
-  %_raw_array655 = call i64* @oat_alloc_array(i64 2)
-  %_array656 = bitcast i64* %_raw_array655 to { i64, [0 x i64] }*
-  %_gep657 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array656, i32 0, i32 1, i32 0
-  store i64 3, i64* %_gep657
-  %_gep659 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array656, i32 0, i32 1, i32 1
-  store i64 4, i64* %_gep659
-  %_raw_array661 = call i64* @oat_alloc_array(i64 2)
-  %_array662 = bitcast i64* %_raw_array661 to { i64, [0 x { i64, [0 x i64] }*] }*
-  %_gep663 = getelementptr { i64, [0 x { i64, [0 x i64] }*] }, { i64, [0 x { i64, [0 x i64] }*] }* %_array662, i32 0, i32 1, i32 0
-  store { i64, [0 x i64] }* %_array650, { i64, [0 x i64] }** %_gep663
-  %_gep665 = getelementptr { i64, [0 x { i64, [0 x i64] }*] }, { i64, [0 x { i64, [0 x i64] }*] }* %_array662, i32 0, i32 1, i32 1
-  store { i64, [0 x i64] }* %_array656, { i64, [0 x i64] }** %_gep665
-  store { i64, [0 x { i64, [0 x i64] }*] }* %_array662, { i64, [0 x { i64, [0 x i64] }*] }** %_arr667
-  %_arr673 = load { i64, [0 x { i64, [0 x i64] }*] }*, { i64, [0 x { i64, [0 x i64] }*] }** %_arr667
-  %_ptr671 = getelementptr { i64, [0 x { i64, [0 x i64] }*] }, { i64, [0 x { i64, [0 x i64] }*] }* %_arr673, i32 0, i32 1, i32 0
-  %_resPtr672 = load { i64, [0 x i64] }*, { i64, [0 x i64] }** %_ptr671
-  %_ptr669 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_resPtr672, i32 0, i32 1, i32 0
-  %_resPtr670 = load i64, i64* %_ptr669
-  ret i64 %_resPtr670
+  %_j555 = alloca i64
+  %_argc551 = alloca i64
+  store i64 %argc, i64* %_argc551
+  %_argv553 = alloca { i64, [0 x i8*] }*
+  store { i64, [0 x i8*] }* %argv, { i64, [0 x i8*] }** %_argv553
+  %_i554 = load i64, i64* @i
+  store i64 %_i554, i64* %_j555
+  %_j557 = load i64, i64* %_j555
+  ret i64 %_j557
 }
 
 

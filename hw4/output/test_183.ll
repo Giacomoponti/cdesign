@@ -1,34 +1,44 @@
-; generated from: oatprograms/lib14.oat
+; generated from: oatprograms/lib4.oat
 target triple = "x86_64-unknown-linux"
+@str = global i8* bitcast ([6 x i8]* @_str2833 to i8*)
+@_str2833 = global [6 x i8] c"hello\00"
+
 define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  %_a1623 = alloca { i64, [0 x i64] }*
-  %_raw_array1601 = call i64* @oat_alloc_array(i64 10)
-  %_array1602 = bitcast i64* %_raw_array1601 to { i64, [0 x i64] }*
-  %_gep1603 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1602, i32 0, i32 1, i32 0
-  store i64 126, i64* %_gep1603
-  %_gep1605 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1602, i32 0, i32 1, i32 1
-  store i64 125, i64* %_gep1605
-  %_gep1607 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1602, i32 0, i32 1, i32 2
-  store i64 124, i64* %_gep1607
-  %_gep1609 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1602, i32 0, i32 1, i32 3
-  store i64 123, i64* %_gep1609
-  %_gep1611 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1602, i32 0, i32 1, i32 4
-  store i64 122, i64* %_gep1611
-  %_gep1613 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1602, i32 0, i32 1, i32 5
-  store i64 121, i64* %_gep1613
-  %_gep1615 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1602, i32 0, i32 1, i32 6
-  store i64 120, i64* %_gep1615
-  %_gep1617 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1602, i32 0, i32 1, i32 7
-  store i64 119, i64* %_gep1617
-  %_gep1619 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1602, i32 0, i32 1, i32 8
-  store i64 118, i64* %_gep1619
-  %_gep1621 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1602, i32 0, i32 1, i32 9
-  store i64 117, i64* %_gep1621
-  store { i64, [0 x i64] }* %_array1602, { i64, [0 x i64] }** %_a1623
-  %_a1625 = load { i64, [0 x i64] }*, { i64, [0 x i64] }** %_a1623
-  %_id1626 = call i8* @string_of_array({ i64, [0 x i64] }* %_a1625)
-  call void @print_string(i8* %_id1626)
-  ret i64 0
+  %_arr2808 = alloca { i64, [0 x i64] }*
+  %_s2810 = alloca i64
+  %_i2812 = alloca i64
+  %_argc2803 = alloca i64
+  store i64 %argc, i64* %_argc2803
+  %_argv2805 = alloca { i64, [0 x i8*] }*
+  store { i64, [0 x i8*] }* %argv, { i64, [0 x i8*] }** %_argv2805
+  %_str2806 = load i8*, i8** @str
+  %_2807 = call { i64, [0 x i64] }* @array_of_string(i8* %_str2806)
+  store { i64, [0 x i64] }* %_2807, { i64, [0 x i64] }** %_arr2808
+  store i64 0, i64* %_s2810
+  store i64 0, i64* %_i2812
+  br label %_pre2817
+_pre2817:
+  %_i2814 = load i64, i64* %_i2812
+  %_bop2815 = icmp slt i64 %_i2814, 5
+  %_cnd2819 = icmp eq i1 %_bop2815, 0
+  br i1 %_cnd2819, label %_post2816, label %_body2818
+_body2818:
+  %_s2820 = load i64, i64* %_s2810
+  %_arr2823 = load { i64, [0 x i64] }*, { i64, [0 x i64] }** %_arr2808
+  %_i2824 = load i64, i64* %_i2812
+  %_ptr2821 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_arr2823, i32 0, i32 1, i64 %_i2824
+  %_resPtr2822 = load i64, i64* %_ptr2821
+  %_bop2825 = add i64 %_s2820, %_resPtr2822
+  store i64 %_bop2825, i64* %_s2810
+  %_i2827 = load i64, i64* %_i2812
+  %_bop2828 = add i64 %_i2827, 1
+  store i64 %_bop2828, i64* %_i2812
+  br label %_pre2817
+_post2816:
+  %_s2830 = load i64, i64* %_s2810
+  call void @print_int(i64 %_s2830)
+  %_s2832 = load i64, i64* %_s2810
+  ret i64 %_s2832
 }
 
 

@@ -1,16 +1,23 @@
-; generated from: oatprograms/globals2.oat
+; generated from: oatprograms/easyrun8.oat
 target triple = "x86_64-unknown-linux"
-@y = global i1 1
-
-define i64 @program(i64 %argc, { i64, [0 x i8*] }* %args) {
-  %_y152 = load i1, i1* @y
-  br i1 %_y152, label %_if155, label %_else154
-_if155:
-  ret i64 17
-_else154:
-  br label %_after153
-_after153:
-  ret i64 15
+define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
+  %_argc109 = alloca i64
+  store i64 %argc, i64* %_argc109
+  %_argv111 = alloca { i64, [0 x i8*] }*
+  store { i64, [0 x i8*] }* %argv, { i64, [0 x i8*] }** %_argv111
+  %_bop112 = icmp ne i64 6, 5
+  br i1 %_bop112, label %_if115, label %_else114
+_if115:
+  %_bop117 = shl i64 5, 17
+  %_bop118 = lshr i64 %_bop117, 2
+  %_bop119 = ashr i64 %_bop118, 10
+  %_uop120 = xor i64 %_bop119, -1
+  %_bop121 = mul i64 %_uop120, 2
+  %_bop122 = sub i64 %_bop121, 100
+  %_bop123 = add i64 %_bop122, 6
+  ret i64 %_bop123
+_else114:
+  ret i64 2
 }
 
 

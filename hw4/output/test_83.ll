@@ -1,22 +1,38 @@
-; generated from: oatprograms/run19.oat
+; generated from: oatprograms/lib14.oat
 target triple = "x86_64-unknown-linux"
 define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  %_i1227 = alloca i64
-  %_a1237 = alloca { i64, [0 x i64] }*
-  store i64 999, i64* %_i1227
-  %_raw_array1229 = call i64* @oat_alloc_array(i64 3)
-  %_array1230 = bitcast i64* %_raw_array1229 to { i64, [0 x i64] }*
-  %_gep1231 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1230, i32 0, i32 1, i32 0
-  store i64 1, i64* %_gep1231
-  %_gep1233 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1230, i32 0, i32 1, i32 1
-  store i64 100, i64* %_gep1233
-  %_gep1235 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1230, i32 0, i32 1, i32 2
-  store i64 999, i64* %_gep1235
-  store { i64, [0 x i64] }* %_array1230, { i64, [0 x i64] }** %_a1237
-  %_a1241 = load { i64, [0 x i64] }*, { i64, [0 x i64] }** %_a1237
-  %_ptr1239 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_a1241, i32 0, i32 1, i32 2
-  %_resPtr1240 = load i64, i64* %_ptr1239
-  ret i64 %_resPtr1240
+  %_a3070 = alloca { i64, [0 x i64] }*
+  %_argc3045 = alloca i64
+  store i64 %argc, i64* %_argc3045
+  %_argv3047 = alloca { i64, [0 x i8*] }*
+  store { i64, [0 x i8*] }* %argv, { i64, [0 x i8*] }** %_argv3047
+  %_raw_array3048 = call i64* @oat_alloc_array(i64 10)
+  %_array3049 = bitcast i64* %_raw_array3048 to { i64, [0 x i64] }*
+  %_gep3050 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array3049, i32 0, i32 1, i32 0
+  store i64 126, i64* %_gep3050
+  %_gep3052 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array3049, i32 0, i32 1, i32 1
+  store i64 125, i64* %_gep3052
+  %_gep3054 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array3049, i32 0, i32 1, i32 2
+  store i64 124, i64* %_gep3054
+  %_gep3056 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array3049, i32 0, i32 1, i32 3
+  store i64 123, i64* %_gep3056
+  %_gep3058 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array3049, i32 0, i32 1, i32 4
+  store i64 122, i64* %_gep3058
+  %_gep3060 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array3049, i32 0, i32 1, i32 5
+  store i64 121, i64* %_gep3060
+  %_gep3062 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array3049, i32 0, i32 1, i32 6
+  store i64 120, i64* %_gep3062
+  %_gep3064 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array3049, i32 0, i32 1, i32 7
+  store i64 119, i64* %_gep3064
+  %_gep3066 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array3049, i32 0, i32 1, i32 8
+  store i64 118, i64* %_gep3066
+  %_gep3068 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array3049, i32 0, i32 1, i32 9
+  store i64 117, i64* %_gep3068
+  store { i64, [0 x i64] }* %_array3049, { i64, [0 x i64] }** %_a3070
+  %_a3072 = load { i64, [0 x i64] }*, { i64, [0 x i64] }** %_a3070
+  %_3073 = call i8* @string_of_array({ i64, [0 x i64] }* %_a3072)
+  call void @print_string(i8* %_3073)
+  ret i64 0
 }
 
 

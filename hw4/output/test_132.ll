@@ -1,23 +1,22 @@
-; generated from: oatprograms/run25.oat
+; generated from: oatprograms/run21.oat
 target triple = "x86_64-unknown-linux"
 define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  %_a1225 = alloca { i64, [0 x i64] }*
-  %_str1229 = alloca i8*
-  %_raw_array1217 = call i64* @oat_alloc_array(i64 3)
-  %_array1218 = bitcast i64* %_raw_array1217 to { i64, [0 x i64] }*
-  %_gep1219 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1218, i32 0, i32 1, i32 0
-  store i64 110, i64* %_gep1219
-  %_gep1221 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1218, i32 0, i32 1, i32 1
-  store i64 110, i64* %_gep1221
-  %_gep1223 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array1218, i32 0, i32 1, i32 2
-  store i64 110, i64* %_gep1223
-  store { i64, [0 x i64] }* %_array1218, { i64, [0 x i64] }** %_a1225
-  %_a1227 = load { i64, [0 x i64] }*, { i64, [0 x i64] }** %_a1225
-  %_id1228 = call i8* @string_of_array({ i64, [0 x i64] }* %_a1227)
-  store i8* %_id1228, i8** %_str1229
-  %_str1231 = load i8*, i8** %_str1229
-  call void @print_string(i8* %_str1231)
-  ret i64 0
+  %_i495 = alloca { i64, [0 x i64] }*
+  %_argc486 = alloca i64
+  store i64 %argc, i64* %_argc486
+  %_argv488 = alloca { i64, [0 x i8*] }*
+  store { i64, [0 x i8*] }* %argv, { i64, [0 x i8*] }** %_argv488
+  %_raw_array489 = call i64* @oat_alloc_array(i64 2)
+  %_array490 = bitcast i64* %_raw_array489 to { i64, [0 x i64] }*
+  %_gep491 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array490, i32 0, i32 1, i32 0
+  store i64 99, i64* %_gep491
+  %_gep493 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array490, i32 0, i32 1, i32 1
+  store i64 0, i64* %_gep493
+  store { i64, [0 x i64] }* %_array490, { i64, [0 x i64] }** %_i495
+  %_i499 = load { i64, [0 x i64] }*, { i64, [0 x i64] }** %_i495
+  %_ptr497 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_i499, i32 0, i32 1, i32 0
+  %_resPtr498 = load i64, i64* %_ptr497
+  ret i64 %_resPtr498
 }
 
 

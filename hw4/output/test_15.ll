@@ -1,24 +1,17 @@
-; generated from: oatprograms/run28.oat
+; generated from: oatprograms/globals6.oat
 target triple = "x86_64-unknown-linux"
-define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  %_i211 = alloca i64
-  %_j216 = alloca i64
-  store i64 9, i64* %_i211
-  %_i213 = load i64, i64* %_i211
-  %_i214 = load i64, i64* %_i211
-  %_bop215 = add i64 %_i213, %_i214
-  store i64 %_bop215, i64* %_j216
-  %_i218 = load i64, i64* %_i211
-  %_i219 = load i64, i64* %_i211
-  %_i220 = load i64, i64* %_i211
-  %_bop221 = mul i64 %_i219, %_i220
-  %_bop222 = add i64 %_i218, %_bop221
-  %_j223 = load i64, i64* %_j216
-  %_bop224 = sub i64 %_bop222, %_j223
-  %_bop225 = lshr i64 %_bop224, 2
-  %_bop226 = shl i64 %_bop225, 2
-  %_bop227 = ashr i64 %_bop226, 2
-  ret i64 %_bop227
+@_s263 = global [7 x i8] c"hello!\00"
+@_s264 = global i8* bitcast ([7 x i8]* @_s263 to i8*)
+
+define i64 @program(i64 %argc, { i64, [0 x i8*] }* %args) {
+  %_s266 = alloca i8*
+  %_argc260 = alloca i64
+  store i64 %argc, i64* %_argc260
+  %_args262 = alloca { i64, [0 x i8*] }*
+  store { i64, [0 x i8*] }* %args, { i64, [0 x i8*] }** %_args262
+  %_tmp265 = load i8*, i8** @_s264
+  store i8* %_tmp265, i8** %_s266
+  ret i64 15
 }
 
 

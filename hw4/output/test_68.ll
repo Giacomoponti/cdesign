@@ -1,32 +1,27 @@
-; generated from: oatprograms/run37.oat
+; generated from: oatprograms/run25.oat
 target triple = "x86_64-unknown-linux"
 define i64 @program(i64 %argc, { i64, [0 x i8*] }* %argv) {
-  %_a458 = alloca { i64, [0 x { i64, [0 x i64] }*] }*
-  %_raw_array440 = call i64* @oat_alloc_array(i64 2)
-  %_array441 = bitcast i64* %_raw_array440 to { i64, [0 x i64] }*
-  %_gep442 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array441, i32 0, i32 1, i32 0
-  store i64 1, i64* %_gep442
-  %_gep444 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array441, i32 0, i32 1, i32 1
-  store i64 2, i64* %_gep444
-  %_raw_array446 = call i64* @oat_alloc_array(i64 2)
-  %_array447 = bitcast i64* %_raw_array446 to { i64, [0 x i64] }*
-  %_gep448 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array447, i32 0, i32 1, i32 0
-  store i64 3, i64* %_gep448
-  %_gep450 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array447, i32 0, i32 1, i32 1
-  store i64 4, i64* %_gep450
-  %_raw_array452 = call i64* @oat_alloc_array(i64 2)
-  %_array453 = bitcast i64* %_raw_array452 to { i64, [0 x { i64, [0 x i64] }*] }*
-  %_gep454 = getelementptr { i64, [0 x { i64, [0 x i64] }*] }, { i64, [0 x { i64, [0 x i64] }*] }* %_array453, i32 0, i32 1, i32 0
-  store { i64, [0 x i64] }* %_array441, { i64, [0 x i64] }** %_gep454
-  %_gep456 = getelementptr { i64, [0 x { i64, [0 x i64] }*] }, { i64, [0 x { i64, [0 x i64] }*] }* %_array453, i32 0, i32 1, i32 1
-  store { i64, [0 x i64] }* %_array447, { i64, [0 x i64] }** %_gep456
-  store { i64, [0 x { i64, [0 x i64] }*] }* %_array453, { i64, [0 x { i64, [0 x i64] }*] }** %_a458
-  %_a464 = load { i64, [0 x { i64, [0 x i64] }*] }*, { i64, [0 x { i64, [0 x i64] }*] }** %_a458
-  %_ptr462 = getelementptr { i64, [0 x { i64, [0 x i64] }*] }, { i64, [0 x { i64, [0 x i64] }*] }* %_a464, i32 0, i32 1, i32 0
-  %_resPtr463 = load { i64, [0 x i64] }*, { i64, [0 x i64] }** %_ptr462
-  %_ptr460 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_resPtr463, i32 0, i32 1, i32 1
-  %_resPtr461 = load i64, i64* %_ptr460
-  ret i64 %_resPtr461
+  %_a2082 = alloca { i64, [0 x i64] }*
+  %_str2086 = alloca i8*
+  %_argc2071 = alloca i64
+  store i64 %argc, i64* %_argc2071
+  %_argv2073 = alloca { i64, [0 x i8*] }*
+  store { i64, [0 x i8*] }* %argv, { i64, [0 x i8*] }** %_argv2073
+  %_raw_array2074 = call i64* @oat_alloc_array(i64 3)
+  %_array2075 = bitcast i64* %_raw_array2074 to { i64, [0 x i64] }*
+  %_gep2076 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array2075, i32 0, i32 1, i32 0
+  store i64 110, i64* %_gep2076
+  %_gep2078 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array2075, i32 0, i32 1, i32 1
+  store i64 110, i64* %_gep2078
+  %_gep2080 = getelementptr { i64, [0 x i64] }, { i64, [0 x i64] }* %_array2075, i32 0, i32 1, i32 2
+  store i64 110, i64* %_gep2080
+  store { i64, [0 x i64] }* %_array2075, { i64, [0 x i64] }** %_a2082
+  %_a2084 = load { i64, [0 x i64] }*, { i64, [0 x i64] }** %_a2082
+  %_2085 = call i8* @string_of_array({ i64, [0 x i64] }* %_a2084)
+  store i8* %_2085, i8** %_str2086
+  %_str2088 = load i8*, i8** %_str2086
+  call void @print_string(i8* %_str2088)
+  ret i64 0
 }
 
 

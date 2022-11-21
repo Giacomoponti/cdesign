@@ -27,7 +27,7 @@ type stream = elt list
 let ( >@ ) x y = y @ x
 let ( >:: ) x y = y :: x
 let lift : (uid * insn) list -> stream = List.rev_map (fun (x,i) -> I (x,i))
-let adamgibilift : (uid * insn) list -> stream = List.map (fun (x,i) -> I (x,i))
+
 (* Build a CFG and collection of global variable definitions from a stream *)
 let cfg_of_stream (code:stream) : Ll.cfg * (Ll.gid * Ll.gdecl) list  =
     let gs, einsns, insns, term_opt, blks = List.fold_left

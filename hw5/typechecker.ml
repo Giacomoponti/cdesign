@@ -95,29 +95,26 @@ and subtype_ret (c : Tctxt.t) (t1 : Ast.ret_ty) (t2 : Ast.ret_ty) : bool =
  *)
 let rec typecheck_ty (l : 'a Ast.node) (tc : Tctxt.t) (t : Ast.ty) : unit =
   match t with 
-  | TInt -> true 
-  | TBool -> true 
+  | TInt -> () 
+  | TBool -> () 
   | TRef rty -> typecheck_ref l tc rty
   | TNullRef rty -> typecheck_ref l tc rty 
 
 and typecheck_ref (l : 'a Ast.node) (tc : Tctxt.t) (t : Ast.rty) : unit =
   match t with 
-  | RString -> true
+  | RString -> ()
   | RArray ty1 -> typecheck_ty l tc ty1 
-  | RStruct id -> if ((lookup_option tc id) == None) then type_error l "wrong type"
+  | RStruct id -> if ((lookup_option id tc) == None) then type_error l "wrong type"
                   else ()  
-  | RArray ty_ls, ret_ty ->  let len = List.length ty_ls1 in
-  if (typecheck_ret l tc ret_ty) == false then 
-    type_error l "wrong type"
-  else
-    let out = ref true in 
+  | RFun (ty_ls, ret_ty) ->  let len = List.length ty_ls in
+  let ret_check = (typecheck_ret l tc ret_ty) in 
     let u = (for i=0 to len-1 do 
-      if (typecheck_ty l tc (List.nth ty_ls i) == false) then out := false
+      typecheck_ty l tc (List.nth ty_ls i);
     done) in 
-    !out 
+    () 
 and typecheck_ret (l : 'a Ast.node) (tc : Tctxt.t) (t : Ast.ret_ty) : unit = 
   match t with 
-  | RetVoid -> true 
+  | RetVoid -> () 
   | RetVal ty ->  typecheck_ty l tc ty
 
 (* typechecking expressions ------------------------------------------------- *)

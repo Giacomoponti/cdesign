@@ -60,10 +60,10 @@ and subtype_ref (c : Tctxt.t) (t1 : Ast.rty) (t2 : Ast.rty) : bool =
   | RString, RString -> true 
   | RArray ty1, RArray ty2 -> true
   | RStruct id1, RStruct id2 -> 
-    if (lookup_local_option id1 c = None || lookup_local_option id2 c = None) then false else true
+    if (lookup_struct_option id1 c = None || lookup_struct_option id2 c = None) then false else true
   |  RFun (ty_ls1, ret_ty1), RFun (ty_ls2, ret_ty2)  ->
     let len = List.length ty_ls1 in
-      if (subtype_ret_ty c ret_ty1 ret_ty2) == false then 
+      if (subtype_ret c ret_ty1 ret_ty2) == false then 
         false 
       else
         let out = ref true in 
@@ -72,7 +72,7 @@ and subtype_ref (c : Tctxt.t) (t1 : Ast.rty) (t2 : Ast.rty) : bool =
         done) in 
         !out
     
-and subtype_ret_ty (c : Tctxt.t) (t1 : Ast.ret_ty) (t2 : Ast.ret_ty) : bool = 
+and subtype_ret (c : Tctxt.t) (t1 : Ast.ret_ty) (t2 : Ast.ret_ty) : bool = 
   match t1, t2 with 
   | RetVoid, RetVoid -> true
   | RetVal ty1, RetVal ty2 -> subtype c ty1 ty2
@@ -94,7 +94,28 @@ and subtype_ret_ty (c : Tctxt.t) (t1 : Ast.ret_ty) (t2 : Ast.ret_ty) : bool =
     - tc contains the structure definition context
  *)
 let rec typecheck_ty (l : 'a Ast.node) (tc : Tctxt.t) (t : Ast.ty) : unit =
-  failwith "todo: implement typecheck_ty"
+  match t with 
+  | TInt -> () 
+  | TBool -> () 
+  | TRef rty -> typecheck_ref l tc rty
+  | TNullRef rty -> typecheck_ref l tc rty 
+
+and typecheck_ref (l : 'a Ast.node) (tc : Tctxt.t) (t : Ast.rty) : unit =
+  match t with 
+  | RString -> ()
+  | RArray ty1 -> typecheck_ty l tc ty1 
+  | RStruct id -> if ((lookup_option id tc) == None) then type_error l "wrong type"
+                  else ()  
+  | RFun (ty_ls, ret_ty) ->  let len = List.length ty_ls in
+  let ret_check = (typecheck_ret l tc ret_ty) in 
+    let u = (for i=0 to len-1 do 
+      typecheck_ty l tc (List.nth ty_ls i);
+    done) in 
+    () 
+and typecheck_ret (l : 'a Ast.node) (tc : Tctxt.t) (t : Ast.ret_ty) : unit = 
+  match t with 
+  | RetVoid -> () 
+  | RetVal ty ->  typecheck_ty l tc ty
 
 (* typechecking expressions ------------------------------------------------- *)
 (* Typechecks an expression in the typing context c, returns the type of the

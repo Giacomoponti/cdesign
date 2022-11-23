@@ -143,8 +143,24 @@ and typecheck_ret (l : 'a Ast.node) (tc : Tctxt.t) (t : Ast.ret_ty) : unit =
 
 *)
 let rec typecheck_exp (c : Tctxt.t) (e : Ast.exp node) : Ast.ty =
-  failwith "todo: implement typecheck_exp"
-
+  match e.elt with 
+  | CBool _ -> TBool 
+  | CInt _ -> TInt 
+  | CStr _ -> TRef (RString)
+  | CNull rty -> let check = (typecheck_ty {elt = exp; loc = Range.norange} c (TRef rty)) in (TNullRef rty)
+  | Id id -> if (lookup_local_option id c == None) then 
+              lookup_global id c 
+            else
+              lookup_local id c 
+  | CArr (ty, exp_ls) -> let check1 = typecheck_ty {elt = exp; loc = Range.norange} c ty in 
+                          let len = List.length exp_ls in 
+                          let check2 = (for i=0 to len-1 do 
+                            let ty_i = typecheck_exp c (List.nth exp_ls i) in 
+                              if (subtype c ty_i ty == false) then (type_error {elt = exp; loc = Range.norange} "wrong type");  
+                              done ) in TRef (RArray ty)
+  | Length expn -> if (typecheck_exp c expn == TRef (RArray ty)) then TInt 
+                   else (type_error {elt = exp; loc = Range.norange} "wrong type")                    
+  | _ -> TInt   
 (* statements --------------------------------------------------------------- *)
 
 (* Typecheck a statement 

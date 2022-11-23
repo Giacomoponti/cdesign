@@ -160,6 +160,34 @@ let unit_tests = [
        if Typechecker.subtype Tctxt.empty (TNullRef RString) (TRef RString) then
          failwith "should not succeed" else ())
   )
+; ("no_subtype_arrayQ_arrayQ",
+  (fun () ->
+      if Typechecker.subtype Tctxt.empty (TNullRef (RArray TInt)) (TRef (RArray TInt)) then
+        failwith "should not succeed" else ())
+)
+; ("subtype_arrayQ_arrayQ",
+  (fun () ->
+      if Typechecker.subtype Tctxt.empty (TRef (RArray TInt)) (TNullRef (RArray TInt)) then ()
+      else failwith "should not fail")
+)
+; ("subtype_arrayQ_arrayQ",
+  (fun () ->
+      if Typechecker.subtype ({ locals = []; globals = []; structs = [("s1", []); ("s2", [])] }) (TRef (RStruct "s1")) (TRef (RStruct "s2")) then ()
+      else failwith "should not fail")
+)
+; ("no_subtype_arrayQ_arrayQ",
+  (fun () ->
+      if Typechecker.subtype ({ locals = []; globals = []; structs = [("s1", [])] }) (TRef (RStruct "s1")) (TRef (RStruct "s2")) then
+        failwith "should not succeed" else ()))
+; ("subtype_arrayQ_arrayQ",
+  (fun () ->
+      if Typechecker.subtype Tctxt.empty (TNullRef (RFun ([TInt; TBool], RetVoid))) (TNullRef (RFun ([TInt; TBool], RetVoid))) then ()
+      else failwith "should not fail")
+)   
+; ("no_subtype_arrayQ_arrayQ",
+  (fun () ->
+      if Typechecker.subtype Tctxt.empty (TNullRef (RFun ([TInt; TBool], RetVoid))) (TNullRef (RFun ([TBool; TBool], RetVoid))) then
+        failwith "should not succeed" else ()))     
 ]
 
 

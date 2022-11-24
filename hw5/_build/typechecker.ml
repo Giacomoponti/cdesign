@@ -158,9 +158,47 @@ let rec typecheck_exp (c : Tctxt.t) (e : Ast.exp node) : Ast.ty =
                             let ty_i = typecheck_exp c (List.nth exp_ls i) in 
                               if (subtype c ty_i ty == false) then (type_error {elt = exp; loc = Range.norange} "wrong type");  
                               done ) in TRef (RArray ty)
-  | Length expn -> if (typecheck_exp c expn == TRef (RArray ty)) then TInt 
-                   else (type_error {elt = exp; loc = Range.norange} "wrong type")                    
+  | Length expn -> let tayp = typecheck_exp c expn in 
+                    begin match tayp with 
+                    | TRef (RArray _) -> TInt
+                    | _ -> type_error {elt = exp; loc = Range.norange} "wrong type" 
+                    end
+
+  | Index (expn1, expn2) -> begin match (typecheck_exp c expn1), (typecheck_exp c expn1) with 
+                            | TRef (RArray ty), TInt -> ty
+                            | _, _ -> type_error {elt = exp; loc = Range.norange} "wrong type" 
+                            end
+
+  | Uop (unop, expn) -> begin match typecheck_uop unop with 
+                        |TRef (RFun ([x], y)) -> if (typecheck_exp c expn) != x then type_error {elt = exp; loc = Range.norange} "wrong type" 
+                                                else x
+                        end   
+  | Bop (Eq, expn1, expn2) -> let ty1 = typecheck_exp c expn1 in 
+                                let ty2 = typecheck_exp c expn2 in 
+                                  if ((subtype c ty1 ty2) && (subtype c ty2 ty1))  then TBool 
+                                  else type_error {elt = exp; loc = Range.norange} "wrong type"
+  | Bop (Eq, expn1, expn2) -> let ty1 = typecheck_exp c expn1 in 
+                                let ty2 = typecheck_exp c expn2 in 
+                                  if ((subtype c ty1 ty2) && (subtype c ty2 ty1))  then TBool 
+                                  else type_error {elt = exp; loc = Range.norange} "wrong type"  
+  | Bop (bop, expn1, expn2) -> begin match typecheck_bop bop with 
+                                | TRef (RFun ([x; y], RetVal z))  -> 
+                                  if ((typecheck_exp c expn1 == x) && (typecheck_exp c expn2 == y)) then z
+                                  else type_error {elt = exp; loc = Range.norange} "wrong type"
+                                | _ -> type_error {elt = exp; loc = Range.norange} "wrong type"
+                                end                                                          
   | _ -> TInt   
+and typecheck_uop (e : Ast.unop) : Ast.ty = 
+  begin match e with 
+  | Neg -> TRef (RFun ([TBool], RetVal TBool))
+  | Lognot | Bitnot -> TRef (RFun ([TInt], RetVal TInt))
+  end  
+ and typecheck_bop (e : Ast.binop) : Ast.ty =
+  begin match e with
+  | Add | Mul | Sub | Shl | Shr | Sar| IAnd | IOr -> TRef (RFun ([TInt; TInt], RetVal TInt))
+  | Lt | Lte | Gt | Gte -> TRef (RFun ([TInt; TInt], RetVal TBool))
+  | And | Or -> TRef (RFun ([TBool; TBool], RetVal TBool))
+  end                         	  
 (* statements --------------------------------------------------------------- *)
 
 (* Typecheck a statement 

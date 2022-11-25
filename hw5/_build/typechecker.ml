@@ -60,7 +60,7 @@ and subtype_ref (c : Tctxt.t) (t1 : Ast.rty) (t2 : Ast.rty) : bool =
   | RString, RString -> true 
   | RArray ty1, RArray ty2 -> true
   | RStruct id1, RStruct id2 -> 
-    if (lookup_struct_option id1 c = None || lookup_struct_option id2 c = None) then false else true
+    if (lookup_struct_option id1 c == None || lookup_struct_option id2 c == None) then false else true
   |  RFun (ty_ls1, ret_ty1), RFun (ty_ls2, ret_ty2)  ->
     let len = List.length ty_ls1 in
       if (subtype_ret c ret_ty1 ret_ty2) == false then 
@@ -93,7 +93,7 @@ and subtype_ret (c : Tctxt.t) (t1 : Ast.ret_ty) (t2 : Ast.ret_ty) : bool =
 
     - tc contains the structure definition context
  *)
-let rec typecheck_ty (l : 'a Ast.node) (tc : Tctxt.t) (t : Ast.ty) : unit =
+let rec typecheck_ty (l : 'a Ast.node) (tc : Tctxt.t) (t : Ast.ty) : unit = 
   match t with 
   | TInt -> () 
   | TBool -> () 
@@ -142,7 +142,7 @@ and typecheck_ret (l : 'a Ast.node) (tc : Tctxt.t) (t : Ast.ret_ty) : unit =
    a=1} is well typed.  (You should sort the fields to compare them.)
 
 *)
-let rec typecheck_exp (c : Tctxt.t) (e : Ast.exp node) : Ast.ty =
+let rec typecheck_exp (c : Tctxt.t) (e : Ast.exp node) : Ast.ty = 
   match e.elt with 
   | CBool _ -> TBool 
   | CInt _ -> TInt 
@@ -187,7 +187,8 @@ let rec typecheck_exp (c : Tctxt.t) (e : Ast.exp node) : Ast.ty =
                                   else type_error {elt = exp; loc = Range.norange} "wrong type"
                                 | _ -> type_error {elt = exp; loc = Range.norange} "wrong type"
                                 end                                                          
-  | _ -> TInt   
+  | _ -> TInt  
+
 and typecheck_uop (e : Ast.unop) : Ast.ty = 
   begin match e with 
   | Neg -> TRef (RFun ([TBool], RetVal TBool))
@@ -288,12 +289,34 @@ let typecheck_fdecl (tc : Tctxt.t) (f : Ast.fdecl) (l : 'a Ast.node) : unit =
 
    NOTE: global initializers may mention function identifiers as
    constants, but can't mention other global values *)
-
+let func_ty (f:fdecl) (tc:Tctxt.t): (Ast.ty) = 
+  let arg_ls = List.map fst f.args in
+    let check1 = (typecheck_ret {elt = exp; loc = Range.norange} tc f.frtyp) in 
+      let check2 = (for i=0 to List.length(arg_ls)-1 do
+        typecheck_ty {elt = exp; loc = Range.norange} tc (List.nth arg_ls i)
+      done) in 
+      TRef(RFun (arg_ls, f.frtyp))
 let create_struct_ctxt (p:Ast.prog) : Tctxt.t =
-  failwith "todo: create_struct_ctxt"
+  let ctxt = Tctxt.empty in 
+    let rec loop ctxt prog = 
+    (begin match prog with 
+    | [] -> ctxt
+    | (Gvdecl _)::xs | (Gfdecl _)::xs -> loop ctxt xs
+    | (Gtdecl x)::xs -> loop (Tctxt.add_struct ctxt (fst x.elt) (snd x.elt)) xs 
+    end ) in 
+    loop ctxt p 
 
 let create_function_ctxt (tc:Tctxt.t) (p:Ast.prog) : Tctxt.t =
-  failwith "todo: create_function_ctxt"
+  let rec loop ctxt prog = 
+    (begin match prog with 
+    | [] -> ctxt
+    | (Gvdecl _)::xs | (Gtdecl _)::xs -> loop ctxt xs
+    | (Gfdecl {elt=f})::xs -> if (lookup_global_option f.fname ctxt == None) then 
+                                let f_ty = func_ty f tc in 
+                                  loop (Tctxt.add_global ctxt (f.fname) (f_ty)) xs 
+                              else loop ctxt xs 
+    end ) in 
+    loop tc p
 
 let create_global_ctxt (tc:Tctxt.t) (p:Ast.prog) : Tctxt.t =
   failwith "todo: create_function_ctxt"

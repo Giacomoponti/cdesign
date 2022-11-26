@@ -51,24 +51,24 @@ let rec subtype (c : Tctxt.t) (t1 : Ast.ty) (t2 : Ast.ty) : bool =
    | TInt, TInt -> true 
    | TBool, TBool -> true 
    | TNullRef rty1, TNullRef rty2 -> subtype_ref c rty1 rty2 
-   | TRef rty1, TRef rty2 -> subtype_ref c rty1 rty2 
-   | TRef rty1, TNullRef rty2 -> subtype_ref c rty1 rty2 
+   | TRef rty1, TRef rty2 -> subtype_ref c (rty1) (rty2) 
+   | TRef rty1, TNullRef rty2 -> subtype_ref c (rty1) (rty2) 
    | _, _ -> false      
 (* Decides whether H |-r ref1 <: ref2 *)
 and subtype_ref (c : Tctxt.t) (t1 : Ast.rty) (t2 : Ast.rty) : bool =
   match t1, t2 with 
   | RString, RString -> true 
-  | RArray ty1, RArray ty2 -> true
+  | RArray ty1, RArray ty2 -> if (ty1 = ty2) then true else false
   | RStruct id1, RStruct id2 -> 
-    if (lookup_struct_option id1 c == None || lookup_struct_option id2 c == None) then false else true
+    (*if (lookup_struct_option id1 c = None or lookup_struct_option id2 c = None) then false else*) true
   |  RFun (ty_ls1, ret_ty1), RFun (ty_ls2, ret_ty2)  ->
     let len = List.length ty_ls1 in
-      if (subtype_ret c ret_ty1 ret_ty2) == false then 
+      if (subtype_ret c ret_ty1 ret_ty2) = false then 
         false 
       else
         let out = ref true in 
         let u = (for i=0 to len-1 do 
-          if (subtype c (List.nth ty_ls1 i) (List.nth ty_ls2 i) = false) then out := false
+          if (subtype c (List.nth ty_ls2 i) (List.nth ty_ls1 i) = false) then out := false
         done) in 
         !out
     
@@ -104,14 +104,15 @@ and typecheck_ref (l : 'a Ast.node) (tc : Tctxt.t) (t : Ast.rty) : unit =
   match t with 
   | RString -> ()
   | RArray ty1 -> typecheck_ty l tc ty1 
-  | RStruct id -> if ((lookup_option id tc) == None) then type_error l "wrong type"
+  | RStruct id -> if ((lookup_struct_option id tc) = None) then type_error l "wrong type"
                   else ()  
-  | RFun (ty_ls, ret_ty) ->  let len = List.length ty_ls in
-  let ret_check = (typecheck_ret l tc ret_ty) in 
-    let u = (for i=0 to len-1 do 
-      typecheck_ty l tc (List.nth ty_ls i);
-    done) in 
-    () 
+  | RFun (ty_ls, ret_ty) ->  
+    let len = List.length ty_ls in
+      let ret_check = (typecheck_ret l tc ret_ty) in 
+        let u = (for i=0 to len-1 do 
+          typecheck_ty l tc (List.nth ty_ls i);
+        done) in ()
+         
 and typecheck_ret (l : 'a Ast.node) (tc : Tctxt.t) (t : Ast.ret_ty) : unit = 
   match t with 
   | RetVoid -> () 
@@ -148,7 +149,7 @@ let rec typecheck_exp (c : Tctxt.t) (e : Ast.exp node) : Ast.ty =
   | CInt _ -> TInt 
   | CStr _ -> TRef (RString)
   | CNull rty -> let check = (typecheck_ty {elt = exp; loc = Range.norange} c (TRef rty)) in (TNullRef rty)
-  | Id id -> if (lookup_local_option id c == None) then 
+  | Id id -> if (lookup_local_option id c = None) then 
               lookup_global id c 
             else
               lookup_local id c 
@@ -156,34 +157,34 @@ let rec typecheck_exp (c : Tctxt.t) (e : Ast.exp node) : Ast.ty =
                           let len = List.length exp_ls in 
                           let check2 = (for i=0 to len-1 do 
                             let ty_i = typecheck_exp c (List.nth exp_ls i) in 
-                              if (subtype c ty_i ty == false) then (type_error {elt = exp; loc = Range.norange} "wrong type");  
+                              if (subtype c ty_i ty = false) then (type_error {elt = exp; loc = Range.norange} "wrong type");  
                               done ) in TRef (RArray ty)
   | Length expn -> let tayp = typecheck_exp c expn in 
                     begin match tayp with 
                     | TRef (RArray _) -> TInt
-                    | _ -> type_error {elt = exp; loc = Range.norange} "wrong type" 
+                    | _ -> type_error expn "wrong type" 
                     end
 
   | Index (expn1, expn2) -> begin match (typecheck_exp c expn1), (typecheck_exp c expn1) with 
                             | TRef (RArray ty), TInt -> ty
-                            | _, _ -> type_error {elt = exp; loc = Range.norange} "wrong type" 
+                            | _, _ -> type_error expn1 "wrong type" 
                             end
 
   | Uop (unop, expn) -> begin match typecheck_uop unop with 
-                        |TRef (RFun ([x], y)) -> if (typecheck_exp c expn) != x then type_error {elt = exp; loc = Range.norange} "wrong type" 
+                        |TRef (RFun ([x], y)) -> if (typecheck_exp c expn) != x then type_error expn "wrong type" 
                                                 else x
                         end   
   | Bop (Eq, expn1, expn2) -> let ty1 = typecheck_exp c expn1 in 
                                 let ty2 = typecheck_exp c expn2 in 
-                                  if ((subtype c ty1 ty2) && (subtype c ty2 ty1))  then TBool 
-                                  else type_error {elt = exp; loc = Range.norange} "wrong type"
-  | Bop (Eq, expn1, expn2) -> let ty1 = typecheck_exp c expn1 in 
+                                  if ((subtype c ty1 ty2) & (subtype c ty2 ty1))  then TBool 
+                                  else type_error expn1 "wrong type"
+  | Bop (Neq, expn1, expn2) -> let ty1 = typecheck_exp c expn1 in 
                                 let ty2 = typecheck_exp c expn2 in 
-                                  if ((subtype c ty1 ty2) && (subtype c ty2 ty1))  then TBool 
-                                  else type_error {elt = exp; loc = Range.norange} "wrong type"  
+                                  if ((subtype c ty1 ty2) & (subtype c ty2 ty1))  then TBool 
+                                  else type_error expn1 "wrong type"  
   | Bop (bop, expn1, expn2) -> begin match typecheck_bop bop with 
                                 | TRef (RFun ([x; y], RetVal z))  -> 
-                                  if ((typecheck_exp c expn1 == x) && (typecheck_exp c expn2 == y)) then z
+                                  if ((typecheck_exp c expn1 = x) & (typecheck_exp c expn2 = y)) then z
                                   else type_error {elt = exp; loc = Range.norange} "wrong type"
                                 | _ -> type_error {elt = exp; loc = Range.norange} "wrong type"
                                 end                                                          
@@ -260,8 +261,15 @@ let typecheck_tdecl (tc : Tctxt.t) id fs  (l : 'a Ast.node) : unit =
     - typechecks the body of the function (passing in the expected return type
     - checks that the function actually returns
 *)
+let rec check_dups_args args = 
+  begin match args with 
+   | [] -> false 
+   | h::t -> (List.exists (fun x -> (snd x) = (snd h)) t) || check_dups_args t
+end
 let typecheck_fdecl (tc : Tctxt.t) (f : Ast.fdecl) (l : 'a Ast.node) : unit =
-  failwith "todo: typecheck_fdecl"
+  let args = f.args in 
+  if check_dups_args args then type_error l ("Repeated fields in " ^ f.fname) 
+  else List.iter (fun arg -> typecheck_ty l tc (fst arg)) args
 
 (* creating the typchecking context ----------------------------------------- *)
 
@@ -289,20 +297,24 @@ let typecheck_fdecl (tc : Tctxt.t) (f : Ast.fdecl) (l : 'a Ast.node) : unit =
 
    NOTE: global initializers may mention function identifiers as
    constants, but can't mention other global values *)
-let func_ty (f:fdecl) (tc:Tctxt.t): (Ast.ty) = 
-  let arg_ls = List.map fst f.args in
-    let check1 = (typecheck_ret {elt = exp; loc = Range.norange} tc f.frtyp) in 
+let func_ty (f:fdecl node) (tc:Tctxt.t): (Ast.ty) = 
+  let arg_ls = List.map fst f.elt.args in
+    let check1 = (typecheck_ret f tc f.elt.frtyp) in 
       let check2 = (for i=0 to List.length(arg_ls)-1 do
-        typecheck_ty {elt = exp; loc = Range.norange} tc (List.nth arg_ls i)
+        typecheck_ty f tc (List.nth arg_ls i)
       done) in 
-      TRef(RFun (arg_ls, f.frtyp))
+      TRef(RFun (arg_ls, f.elt.frtyp))
+
 let create_struct_ctxt (p:Ast.prog) : Tctxt.t =
   let ctxt = Tctxt.empty in 
     let rec loop ctxt prog = 
     (begin match prog with 
     | [] -> ctxt
     | (Gvdecl _)::xs | (Gfdecl _)::xs -> loop ctxt xs
-    | (Gtdecl x)::xs -> loop (Tctxt.add_struct ctxt (fst x.elt) (snd x.elt)) xs 
+    | (Gtdecl x)::xs -> if (lookup_struct_option (fst x.elt) ctxt = None) then
+                         loop (Tctxt.add_struct ctxt (fst x.elt) (snd x.elt)) xs
+                        else 
+                          loop ctxt xs 
     end ) in 
     loop ctxt p 
 
@@ -311,16 +323,24 @@ let create_function_ctxt (tc:Tctxt.t) (p:Ast.prog) : Tctxt.t =
     (begin match prog with 
     | [] -> ctxt
     | (Gvdecl _)::xs | (Gtdecl _)::xs -> loop ctxt xs
-    | (Gfdecl {elt=f})::xs -> if (lookup_global_option f.fname ctxt == None) then 
+    | (Gfdecl f)::xs -> if (lookup_global_option f.elt.fname ctxt = None) then 
                                 let f_ty = func_ty f tc in 
-                                  loop (Tctxt.add_global ctxt (f.fname) (f_ty)) xs 
+                                  loop (Tctxt.add_global ctxt (f.elt.fname) (f_ty)) xs 
                               else loop ctxt xs 
     end ) in 
     loop tc p
 
 let create_global_ctxt (tc:Tctxt.t) (p:Ast.prog) : Tctxt.t =
-  failwith "todo: create_function_ctxt"
-
+  let rec loop ctxt prog = 
+    (begin match prog with 
+    | [] -> ctxt
+    | (Gfdecl _)::xs | (Gtdecl _)::xs -> loop ctxt xs
+    | (Gvdecl {elt=g})::xs -> if (lookup_global_option g.name ctxt = None) then 
+                                let g_ty = typecheck_exp ctxt g.init in 
+                                  loop (Tctxt.add_global ctxt (g.name) (g_ty)) xs 
+                              else loop ctxt xs 
+    end ) in 
+    loop tc p
 
 (* This function implements the |- prog and the H ; G |- prog 
    rules of the oat.pdf specification.   

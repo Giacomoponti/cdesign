@@ -42,15 +42,59 @@
 # Target: ll/llutil.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:ll/llutil.cmo, file:ll/llutil.ml, implem, ocaml, quiet }
 /home/gponti/.opam/4.06.0/bin/ocamlc.opt -c -I /home/gponti/.opam/4.06.0/lib/num -I /home/gponti/.opam/4.06.0/lib/ocaml -I ll -I util -I x86 -o ll/llutil.cmo ll/llutil.ml # cached
 # Target: typechecker.ml.depends, tags: { extension:ml, file:typechecker.ml, ocaml, ocamldep, quiet }
-/home/gponti/.opam/4.06.0/bin/ocamldep.opt -modules typechecker.ml > typechecker.ml.depends # cached
+/home/gponti/.opam/4.06.0/bin/ocamldep.opt -modules typechecker.ml > typechecker.ml.depends
 # Target: tctxt.ml.depends, tags: { extension:ml, file:tctxt.ml, ocaml, ocamldep, quiet }
 /home/gponti/.opam/4.06.0/bin/ocamldep.opt -modules tctxt.ml > tctxt.ml.depends # cached
 # Target: tctxt.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:tctxt.cmo, file:tctxt.ml, implem, ocaml, quiet }
 /home/gponti/.opam/4.06.0/bin/ocamlc.opt -c -I /home/gponti/.opam/4.06.0/lib/num -I /home/gponti/.opam/4.06.0/lib/ocaml -I ll -I util -I x86 -o tctxt.cmo tctxt.ml # cached
 # Target: typechecker.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:typechecker.cmo, file:typechecker.ml, implem, ocaml, quiet }
-/home/gponti/.opam/4.06.0/bin/ocamlc.opt -c -I /home/gponti/.opam/4.06.0/lib/num -I /home/gponti/.opam/4.06.0/lib/ocaml -I ll -I util -I x86 -o typechecker.cmo typechecker.ml # cached
-# Target: frontend.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:frontend.cmo, file:frontend.ml, implem, ocaml, quiet }
-/home/gponti/.opam/4.06.0/bin/ocamlc.opt -c -I /home/gponti/.opam/4.06.0/lib/num -I /home/gponti/.opam/4.06.0/lib/ocaml -I ll -I util -I x86 -o frontend.cmo frontend.ml # cached
+/home/gponti/.opam/4.06.0/bin/ocamlc.opt -c -I /home/gponti/.opam/4.06.0/lib/num -I /home/gponti/.opam/4.06.0/lib/ocaml -I ll -I util -I x86 -o typechecker.cmo typechecker.ml
++ /home/gponti/.opam/4.06.0/bin/ocamlc.opt -c -I /home/gponti/.opam/4.06.0/lib/num -I /home/gponti/.opam/4.06.0/lib/ocaml -I ll -I util -I x86 -o typechecker.cmo typechecker.ml
+File "typechecker.ml", line 59, characters 2-618:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+((RFun (_, _), (RString|RStruct _|RArray _))|
+(RStruct _, (RString|RArray _|RFun (_, _)))|
+(RArray _, (RString|RStruct _|RFun (_, _)))|
+(RString, (RStruct _|RArray _|RFun (_, _))))
+File "typechecker.ml", line 76, characters 2-97:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+((RetVal _, RetVoid)|(RetVoid, RetVal _))
+File "typechecker.ml", line 173, characters 24-258:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+(TRef (RFun (_::_::_, _))|TRef (RFun ([], _))|
+TRef (RString|RStruct _|RArray _)|TBool|TInt|TNullRef _)
+File "typechecker.ml", line 179, characters 58-59:
+Warning 3: deprecated: Pervasives.&
+Use (&&) instead.
+File "typechecker.ml", line 183, characters 58-59:
+Warning 3: deprecated: Pervasives.&
+Use (&&) instead.
+File "typechecker.ml", line 187, characters 66-67:
+Warning 3: deprecated: Pervasives.&
+Use (&&) instead.
+File "typechecker.ml", line 199, characters 2-246:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+(Eq|Neq)
+File "typechecker.ml", line 70, characters 12-13:
+Warning 26: unused variable u.
+File "typechecker.ml", line 111, characters 10-19:
+Warning 26: unused variable ret_check.
+File "typechecker.ml", line 112, characters 12-13:
+Warning 26: unused variable u.
+File "typechecker.ml", line 151, characters 21-26:
+Warning 26: unused variable check.
+File "typechecker.ml", line 156, characters 29-35:
+Warning 26: unused variable check1.
+File "typechecker.ml", line 158, characters 30-36:
+Warning 26: unused variable check2.
+File "typechecker.ml", line 302, characters 8-14:
+Warning 26: unused variable check1.
+File "typechecker.ml", line 303, characters 10-16:
+Warning 26: unused variable check2.
 # Target: lexer.mll, tags: { extension:mll, file:lexer.mll, lexer, ocaml, ocamllex, quiet }
 /home/gponti/.opam/4.06.0/bin/ocamllex.opt -q lexer.mll # cached
 # Target: lexer.ml.depends, tags: { extension:ml, file:lexer.ml, ocaml, ocamldep, quiet }
@@ -79,18 +123,20 @@ menhir --ocamlc '/home/gponti/.opam/4.06.0/bin/ocamlc.opt -I /home/gponti/.opam/
 /home/gponti/.opam/4.06.0/bin/ocamlc.opt -c -I /home/gponti/.opam/4.06.0/lib/num -I /home/gponti/.opam/4.06.0/lib/ocaml -I ll -I util -I x86 -o ll/llparser.cmi ll/llparser.mli # cached
 # Target: ll/lllexer.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:ll/lllexer.cmo, file:ll/lllexer.ml, implem, ocaml, quiet }
 /home/gponti/.opam/4.06.0/bin/ocamlc.opt -c -I /home/gponti/.opam/4.06.0/lib/num -I /home/gponti/.opam/4.06.0/lib/ocaml -I ll -I util -I x86 -o ll/lllexer.cmo ll/lllexer.ml # cached
-# Target: driver.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:driver.cmo, file:driver.ml, implem, ocaml, quiet }
-/home/gponti/.opam/4.06.0/bin/ocamlc.opt -c -I /home/gponti/.opam/4.06.0/lib/num -I /home/gponti/.opam/4.06.0/lib/ocaml -I ll -I util -I x86 -o driver.cmo driver.ml # cached
+# Target: frontend.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:frontend.cmo, file:frontend.ml, implem, ocaml, quiet }
+/home/gponti/.opam/4.06.0/bin/ocamlc.opt -c -I /home/gponti/.opam/4.06.0/lib/num -I /home/gponti/.opam/4.06.0/lib/ocaml -I ll -I util -I x86 -o frontend.cmo frontend.ml
 # Target: gradedtests.ml.depends, tags: { extension:ml, file:gradedtests.ml, ocaml, ocamldep, quiet }
 /home/gponti/.opam/4.06.0/bin/ocamldep.opt -modules gradedtests.ml > gradedtests.ml.depends # cached
-# Target: gradedtests.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:gradedtests.cmo, file:gradedtests.ml, implem, ocaml, quiet }
-/home/gponti/.opam/4.06.0/bin/ocamlc.opt -c -I /home/gponti/.opam/4.06.0/lib/num -I /home/gponti/.opam/4.06.0/lib/ocaml -I ll -I util -I x86 -o gradedtests.cmo gradedtests.ml # cached
+# Target: driver.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:driver.cmo, file:driver.ml, implem, ocaml, quiet }
+/home/gponti/.opam/4.06.0/bin/ocamlc.opt -c -I /home/gponti/.opam/4.06.0/lib/num -I /home/gponti/.opam/4.06.0/lib/ocaml -I ll -I util -I x86 -o driver.cmo driver.ml
 # Target: studenttests.ml.depends, tags: { extension:ml, file:studenttests.ml, ocaml, ocamldep, quiet }
 /home/gponti/.opam/4.06.0/bin/ocamldep.opt -modules studenttests.ml > studenttests.ml.depends # cached
 # Target: studenttests.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:studenttests.cmo, file:studenttests.ml, implem, ocaml, quiet }
 /home/gponti/.opam/4.06.0/bin/ocamlc.opt -c -I /home/gponti/.opam/4.06.0/lib/num -I /home/gponti/.opam/4.06.0/lib/ocaml -I ll -I util -I x86 -o studenttests.cmo studenttests.ml # cached
+# Target: gradedtests.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:gradedtests.cmo, file:gradedtests.ml, implem, ocaml, quiet }
+/home/gponti/.opam/4.06.0/bin/ocamlc.opt -c -I /home/gponti/.opam/4.06.0/lib/num -I /home/gponti/.opam/4.06.0/lib/ocaml -I ll -I util -I x86 -o gradedtests.cmo gradedtests.ml
 # Target: main.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:main.cmo, file:main.ml, implem, ocaml, quiet }
-/home/gponti/.opam/4.06.0/bin/ocamlc.opt -c -I /home/gponti/.opam/4.06.0/lib/num -I /home/gponti/.opam/4.06.0/lib/ocaml -I ll -I util -I x86 -o main.cmo main.ml # cached
+/home/gponti/.opam/4.06.0/bin/ocamlc.opt -c -I /home/gponti/.opam/4.06.0/lib/num -I /home/gponti/.opam/4.06.0/lib/ocaml -I ll -I util -I x86 -o main.cmo main.ml
 # Target: util/assert.ml.depends, tags: { extension:ml, file:util/assert.ml, ocaml, ocamldep, quiet }
 /home/gponti/.opam/4.06.0/bin/ocamldep.opt -modules util/assert.ml > util/assert.ml.depends # cached
 # Target: util/assert.cmx, tags: { compile, extension:cmx, extension:ml, file:util/assert.cmx, file:util/assert.ml, implem, native, ocaml, quiet }
@@ -116,9 +162,53 @@ menhir --ocamlc '/home/gponti/.opam/4.06.0/bin/ocamlc.opt -I /home/gponti/.opam/
 # Target: tctxt.cmx, tags: { compile, extension:cmx, extension:ml, file:tctxt.cmx, file:tctxt.ml, implem, native, ocaml, quiet }
 /home/gponti/.opam/4.06.0/bin/ocamlopt.opt -c -I /home/gponti/.opam/4.06.0/lib/num -I /home/gponti/.opam/4.06.0/lib/ocaml -I ll -I util -I x86 -o tctxt.cmx tctxt.ml # cached
 # Target: typechecker.cmx, tags: { compile, extension:cmx, extension:ml, file:typechecker.cmx, file:typechecker.ml, implem, native, ocaml, quiet }
-/home/gponti/.opam/4.06.0/bin/ocamlopt.opt -c -I /home/gponti/.opam/4.06.0/lib/num -I /home/gponti/.opam/4.06.0/lib/ocaml -I ll -I util -I x86 -o typechecker.cmx typechecker.ml # cached
-# Target: frontend.cmx, tags: { compile, extension:cmx, extension:ml, file:frontend.cmx, file:frontend.ml, implem, native, ocaml, quiet }
-/home/gponti/.opam/4.06.0/bin/ocamlopt.opt -c -I /home/gponti/.opam/4.06.0/lib/num -I /home/gponti/.opam/4.06.0/lib/ocaml -I ll -I util -I x86 -o frontend.cmx frontend.ml # cached
+/home/gponti/.opam/4.06.0/bin/ocamlopt.opt -c -I /home/gponti/.opam/4.06.0/lib/num -I /home/gponti/.opam/4.06.0/lib/ocaml -I ll -I util -I x86 -o typechecker.cmx typechecker.ml
++ /home/gponti/.opam/4.06.0/bin/ocamlopt.opt -c -I /home/gponti/.opam/4.06.0/lib/num -I /home/gponti/.opam/4.06.0/lib/ocaml -I ll -I util -I x86 -o typechecker.cmx typechecker.ml
+File "typechecker.ml", line 59, characters 2-618:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+((RFun (_, _), (RString|RStruct _|RArray _))|
+(RStruct _, (RString|RArray _|RFun (_, _)))|
+(RArray _, (RString|RStruct _|RFun (_, _)))|
+(RString, (RStruct _|RArray _|RFun (_, _))))
+File "typechecker.ml", line 76, characters 2-97:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+((RetVal _, RetVoid)|(RetVoid, RetVal _))
+File "typechecker.ml", line 173, characters 24-258:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+(TRef (RFun (_::_::_, _))|TRef (RFun ([], _))|
+TRef (RString|RStruct _|RArray _)|TBool|TInt|TNullRef _)
+File "typechecker.ml", line 179, characters 58-59:
+Warning 3: deprecated: Pervasives.&
+Use (&&) instead.
+File "typechecker.ml", line 183, characters 58-59:
+Warning 3: deprecated: Pervasives.&
+Use (&&) instead.
+File "typechecker.ml", line 187, characters 66-67:
+Warning 3: deprecated: Pervasives.&
+Use (&&) instead.
+File "typechecker.ml", line 199, characters 2-246:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+(Eq|Neq)
+File "typechecker.ml", line 70, characters 12-13:
+Warning 26: unused variable u.
+File "typechecker.ml", line 111, characters 10-19:
+Warning 26: unused variable ret_check.
+File "typechecker.ml", line 112, characters 12-13:
+Warning 26: unused variable u.
+File "typechecker.ml", line 151, characters 21-26:
+Warning 26: unused variable check.
+File "typechecker.ml", line 156, characters 29-35:
+Warning 26: unused variable check1.
+File "typechecker.ml", line 158, characters 30-36:
+Warning 26: unused variable check2.
+File "typechecker.ml", line 302, characters 8-14:
+Warning 26: unused variable check1.
+File "typechecker.ml", line 303, characters 10-16:
+Warning 26: unused variable check2.
 # Target: parser.ml.depends, tags: { extension:ml, file:parser.ml, ocaml, ocamldep, quiet }
 /home/gponti/.opam/4.06.0/bin/ocamldep.opt -modules parser.ml > parser.ml.depends # cached
 # Target: parser.cmx, tags: { compile, extension:cmx, extension:ml, file:parser.cmx, file:parser.ml, implem, native, ocaml, quiet }
@@ -131,14 +221,16 @@ menhir --ocamlc '/home/gponti/.opam/4.06.0/bin/ocamlc.opt -I /home/gponti/.opam/
 /home/gponti/.opam/4.06.0/bin/ocamlopt.opt -c -I /home/gponti/.opam/4.06.0/lib/num -I /home/gponti/.opam/4.06.0/lib/ocaml -I ll -I util -I x86 -o ll/llparser.cmx ll/llparser.ml # cached
 # Target: ll/lllexer.cmx, tags: { compile, extension:cmx, extension:ml, file:ll/lllexer.cmx, file:ll/lllexer.ml, implem, native, ocaml, quiet }
 /home/gponti/.opam/4.06.0/bin/ocamlopt.opt -c -I /home/gponti/.opam/4.06.0/lib/num -I /home/gponti/.opam/4.06.0/lib/ocaml -I ll -I util -I x86 -o ll/lllexer.cmx ll/lllexer.ml # cached
+# Target: frontend.cmx, tags: { compile, extension:cmx, extension:ml, file:frontend.cmx, file:frontend.ml, implem, native, ocaml, quiet }
+/home/gponti/.opam/4.06.0/bin/ocamlopt.opt -c -I /home/gponti/.opam/4.06.0/lib/num -I /home/gponti/.opam/4.06.0/lib/ocaml -I ll -I util -I x86 -o frontend.cmx frontend.ml
 # Target: driver.cmx, tags: { compile, extension:cmx, extension:ml, file:driver.cmx, file:driver.ml, implem, native, ocaml, quiet }
-/home/gponti/.opam/4.06.0/bin/ocamlopt.opt -c -I /home/gponti/.opam/4.06.0/lib/num -I /home/gponti/.opam/4.06.0/lib/ocaml -I ll -I util -I x86 -o driver.cmx driver.ml # cached
-# Target: gradedtests.cmx, tags: { compile, extension:cmx, extension:ml, file:gradedtests.cmx, file:gradedtests.ml, implem, native, ocaml, quiet }
-/home/gponti/.opam/4.06.0/bin/ocamlopt.opt -c -I /home/gponti/.opam/4.06.0/lib/num -I /home/gponti/.opam/4.06.0/lib/ocaml -I ll -I util -I x86 -o gradedtests.cmx gradedtests.ml # cached
+/home/gponti/.opam/4.06.0/bin/ocamlopt.opt -c -I /home/gponti/.opam/4.06.0/lib/num -I /home/gponti/.opam/4.06.0/lib/ocaml -I ll -I util -I x86 -o driver.cmx driver.ml
 # Target: studenttests.cmx, tags: { compile, extension:cmx, extension:ml, file:studenttests.cmx, file:studenttests.ml, implem, native, ocaml, quiet }
 /home/gponti/.opam/4.06.0/bin/ocamlopt.opt -c -I /home/gponti/.opam/4.06.0/lib/num -I /home/gponti/.opam/4.06.0/lib/ocaml -I ll -I util -I x86 -o studenttests.cmx studenttests.ml # cached
+# Target: gradedtests.cmx, tags: { compile, extension:cmx, extension:ml, file:gradedtests.cmx, file:gradedtests.ml, implem, native, ocaml, quiet }
+/home/gponti/.opam/4.06.0/bin/ocamlopt.opt -c -I /home/gponti/.opam/4.06.0/lib/num -I /home/gponti/.opam/4.06.0/lib/ocaml -I ll -I util -I x86 -o gradedtests.cmx gradedtests.ml
 # Target: main.cmx, tags: { compile, extension:cmx, extension:ml, file:main.cmx, file:main.ml, implem, native, ocaml, quiet }
-/home/gponti/.opam/4.06.0/bin/ocamlopt.opt -c -I /home/gponti/.opam/4.06.0/lib/num -I /home/gponti/.opam/4.06.0/lib/ocaml -I ll -I util -I x86 -o main.cmx main.ml # cached
+/home/gponti/.opam/4.06.0/bin/ocamlopt.opt -c -I /home/gponti/.opam/4.06.0/lib/num -I /home/gponti/.opam/4.06.0/lib/ocaml -I ll -I util -I x86 -o main.cmx main.ml
 # Target: main.native, tags: { dont_link_with, extension:native, file:main.native, link, native, ocaml, program, quiet }
-/home/gponti/.opam/4.06.0/bin/ocamlopt.opt unix.cmxa str.cmxa -I /home/gponti/.opam/4.06.0/lib/num -I /home/gponti/.opam/4.06.0/lib/ocaml /home/gponti/.opam/4.06.0/lib/ocaml/nums.cmxa -I util -I ll -I x86 util/range.cmx ast.cmx astlib.cmx ll/ll.cmx util/platform.cmx x86/x86.cmx backend.cmx ll/llutil.cmx tctxt.cmx typechecker.cmx frontend.cmx parser.cmx lexer.cmx ll/llparser.cmx ll/lllexer.cmx driver.cmx util/assert.cmx gradedtests.cmx studenttests.cmx main.cmx -o main.native # cached
+/home/gponti/.opam/4.06.0/bin/ocamlopt.opt unix.cmxa str.cmxa -I /home/gponti/.opam/4.06.0/lib/num -I /home/gponti/.opam/4.06.0/lib/ocaml /home/gponti/.opam/4.06.0/lib/ocaml/nums.cmxa -I util -I ll -I x86 util/range.cmx ast.cmx astlib.cmx ll/ll.cmx util/platform.cmx x86/x86.cmx backend.cmx ll/llutil.cmx tctxt.cmx typechecker.cmx frontend.cmx parser.cmx lexer.cmx ll/llparser.cmx ll/lllexer.cmx driver.cmx util/assert.cmx gradedtests.cmx studenttests.cmx main.cmx -o main.native
 # Compilation successful.

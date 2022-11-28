@@ -254,7 +254,9 @@ and typecheck_uop (e : Ast.unop) : Ast.ty =
 
 let rec typecheck_stmt (tc : Tctxt.t) (s:Ast.stmt node) (to_ret:ret_ty) : Tctxt.t * bool =
   begin match s.elt with
-  | Assn (expn1, expn2) -> 
+  | Assn (expn1, expn2) ->  begin match expn1.el;t with 
+                            | Id id -> 
+                            |   
   | Decl vdecl -> (typecheck_vdecl tc vdecl, true)
   | Ret expn_opt -> begin match expn_opt, to_ret with 
                     | Some expn, Ret ty -> let ret_ty = typecheck_exp tc expn in 

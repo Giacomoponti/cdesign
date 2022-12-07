@@ -36,8 +36,71 @@ type fact = SymConst.t UidM.t
    - Uid of stores and void calls are UndefConst-out
    - Uid of all other instructions are NonConst-out
  *)
+ let res_of_bop (bop:Ll.bop) (a:int64) (b:int64) = 
+  begin match bop with 
+  |Add -> Int64.add a b
+  |Sub -> Int64.sub a b
+  |Mul -> Int64.mul a b 
+  |Shl -> Int64.shift_left a (Int64.to_int b) 
+  |Lshr -> Int64.shift_right_logical a (Int64.to_int b) 
+  |Ashr -> Int64.shift_right a (Int64.to_int b) 
+  |And -> Int64.logand a b
+  |Or -> Int64.logor a b
+  |Xor -> Int64.logxor a b
+ end
+ 
+ let res_of_cond (cnd:Ll.cnd) (a:int64) (b:int64) = 
+  begin match cnd with
+  |Eq -> if (a = b) then 1L else 0L
+  |Ne ->if (a = b) then 0L else 1L
+  |Slt -> if (a < b) then 1L else 0L
+  |Sle -> if (a <= b) then 1L else 0L
+  |Sgt -> if (a > b) then 1L else 0L
+  |Sge -> if (a >= b) then 1L else 0L
+ end 
+
 let insn_flow (u,i:uid * insn) (d:fact) : fact =
-  failwith "Constprop.insn_flow unimplemented"
+  begin match i with 
+  | Binop (bop, ty, op1, op2) -> begin match op1, op2 with 
+                                | Const a, Const b -> UidM.add u (SymConst.Const(res_of_bop bop a b)) d
+                                | Id id, b | b, Id id -> begin match (try (UidM.find id d) with Not_found -> SymConst.NonConst) with 
+                                                          |SymConst.NonConst -> ( UidM.add u SymConst.NonConst d)
+                                                          |SymConst.UndefConst -> (UidM.add u SymConst.UndefConst d)
+                                                          |SymConst.Const a ->  begin match b with
+                                                                                | Id s -> begin match (try (UidM.find s d) with Not_found -> SymConst.NonConst) with
+                                                                                          |SymConst.Const e -> let res = (if (op2 = Id id) then res_of_bop bop e a else res_of_bop bop a e) in (UidM.add u (SymConst.Const(res)) d)
+                                                                                          |SymConst.NonConst -> (UidM.add u SymConst.NonConst d)
+                                                                                          |SymConst.UndefConst -> (UidM.add u SymConst.UndefConst d)
+                                                                                          | _ -> d
+                                                                                          end
+                                                                                | Const s -> let res = (if (op2 = Id id) then res_of_bop bop s a else res_of_bop bop a s) in (UidM.add u (SymConst.Const(res)) d) 
+                                                                                | _ -> (UidM.add u SymConst.NonConst d)
+                                                                                end
+                                                          | _ -> d                               
+                                                        end
+                                end
+  | Icmp (cnd, ty, op1, op2) -> begin match op1, op2 with 
+                                | Const a, Const b -> (UidM.add u (SymConst.Const (res_of_cond cnd a b )) d)
+                                | Id id, b | b, Id id -> begin match (try (UidM.find id d) with Not_found -> SymConst.NonConst) with
+                                                          |SymConst.NonConst -> (UidM.add u SymConst.NonConst d)
+                                                          |SymConst.UndefConst -> (UidM.add u SymConst.UndefConst d)
+                                                          |SymConst.Const a -> begin match b with
+                                                                                | Id s -> begin match (try (UidM.find s d) with Not_found -> SymConst.NonConst) with
+                                                                                          |SymConst.Const e -> let res = (if (op2 = Id id) then res_of_cond cnd e a else res_of_cond cnd a e) in (UidM.add u (SymConst.Const(res)) d)
+                                                                                          |SymConst.NonConst -> (UidM.add u SymConst.NonConst d)
+                                                                                          |SymConst.UndefConst -> (UidM.add u SymConst.UndefConst d)
+                                                                                          | _ -> d
+                                                                                          end
+                                                                                | Const s ->  let res = (if (op2 = Id id) then res_of_cond cnd s a else res_of_cond cnd a s) in (UidM.add u (SymConst.Const(res)) d) 
+                                                                                | _ -> (UidM.add u SymConst.NonConst d)
+                                                                                end 
+                                                           | _ -> d                             
+                                                        end
+                                end  
+  |Store (_, _, _) -> UidM.add u SymConst.UndefConst d
+  |Call(Void, _, _) -> UidM.add u SymConst.UndefConst d
+  |_ -> UidM.add u SymConst.NonConst d
+  end 
 
 (* The flow function across terminators is trivial: they never change const info *)
 let terminator_flow (t:terminator) (d:fact) : fact = d
@@ -63,7 +126,15 @@ module Fact =
     (* The constprop analysis should take the meet over predecessors to compute the
        flow into a node. You may find the UidM.merge function useful *)
     let combine (ds:fact list) : fact = 
-      failwith "Constprop.Fact.combine unimplemented"
+      let empty_ref = ref UidM.empty in 
+        let helper x y = (begin match x, y with 
+                          |(SymConst.Const a, SymConst.Const b) -> if (a = b) then Some (SymConst.Const a) else Some (SymConst.NonConst)
+                          |(SymConst.Const _ , SymConst.NonConst) |(SymConst.NonConst, SymConst.Const _) |(SymConst.NonConst, SymConst.NonConst) -> Some SymConst.NonConst
+                          | _ -> Some SymConst.UndefConst
+                          end) in 
+        let u = (for i=0 to (List.length ds)-1 do  
+            empty_ref := ((UidM.union (fun key x y -> helper x y)) (!empty_ref) (List.nth ds i))
+        done) in (!empty_ref)
   end
 
 (* instantiate the general framework ---------------------------------------- *)

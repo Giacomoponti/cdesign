@@ -88,15 +88,16 @@ module Make (Fact : FACT) (Graph : DFA_GRAPH with type fact := Fact.t) =
   struct
 
     let solve (g:Graph.t) : Graph.t =
-      let nodes = Graph.nodes g in 
-        let u = (while (Graph.NodeS.is_empty nodes) do 
-          let n = Graph.NodeS.min_elt nodes in 
-            let out = Graph.out g n in 
-              let in_ = Fact.combine (Graph.NodeS.fold  (fun node ls -> (Graph.out g node )::ls  ) (Graph.preds g n) [] ) in
-                let out_ = Graph.flow g n in_ in 
-                  let g = Graph.add_fact n out_ g in 
-                    if (Fact.compare out_ out = 0) then Graph.NodeS.remove n nodes
-                    else Graph.NodeS.union (Graph.succs g n) (Graph.NodeS.remove n nodes)
-      done) in g
+      let g_ref = ref g in
+      let nodes = ref (Graph.nodes g) in  
+        let u = (while (Graph.NodeS.is_empty (!nodes) = false) do 
+          let n = Graph.NodeS.min_elt (!nodes) in 
+            let out = Graph.out (!g_ref) n in 
+              let in_ = Fact.combine (Graph.NodeS.fold  (fun node ls -> (Graph.out (!g_ref) node )::ls  ) (Graph.preds (!g_ref) n) [] ) in
+                let out_ = Graph.flow (!g_ref) n in_ in 
+                  let u2 = (g_ref := Graph.add_fact n out_ (!g_ref)) in 
+                    if (Fact.compare out_ out = 0) then nodes := Graph.NodeS.remove n (!nodes)
+                    else nodes := Graph.NodeS.union (Graph.succs (!g_ref) n) (Graph.NodeS.remove n (!nodes))
+      done) in (!g_ref)
   end
 

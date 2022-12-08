@@ -128,10 +128,6 @@ File "constprop.ml", line 97, characters 61-62:
 Warning 11: this match case is unused.
 File "constprop.ml", line 135, characters 12-13:
 Warning 26: unused variable u.
-File "constprop.ml", line 168, characters 8-9:
-Warning 26: unused variable b.
-File "constprop.ml", line 169, characters 8-10:
-Warning 26: unused variable cb.
 # Target: registers.ml.depends, tags: { extension:ml, file:registers.ml, ocaml, ocamldep, quiet }
 /home/gponti/.opam/4.06.0/bin/ocamldep.opt -modules registers.ml > registers.ml.depends # cached
 # Target: registers.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:registers.cmo, file:registers.ml, implem, ocaml, quiet }
@@ -223,10 +219,6 @@ File "constprop.ml", line 97, characters 61-62:
 Warning 11: this match case is unused.
 File "constprop.ml", line 135, characters 12-13:
 Warning 26: unused variable u.
-File "constprop.ml", line 168, characters 8-9:
-Warning 26: unused variable b.
-File "constprop.ml", line 169, characters 8-10:
-Warning 26: unused variable cb.
 # Target: registers.cmx, tags: { compile, extension:cmx, extension:ml, file:registers.cmx, file:registers.ml, implem, native, ocaml, quiet }
 /home/gponti/.opam/4.06.0/bin/ocamlopt.opt -c -I ll -I util -I x86 -o registers.cmx registers.ml # cached
 # Target: opt.cmx, tags: { compile, extension:cmx, extension:ml, file:opt.cmx, file:opt.ml, implem, native, ocaml, quiet }
